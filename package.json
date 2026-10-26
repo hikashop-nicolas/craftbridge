@@ -1,0 +1,33 @@
+{
+  "name": "craftbridge",
+  "version": "0.0.1",
+  "description": "Browser bindings for the ArtCraft engines: PdfCraft's PDF engine as a wasm module behind a Web Worker.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./pdf": {
+      "types": "./dist/pdf/index.d.ts",
+      "import": "./dist/pdf/index.js"
+    },
+    "./pdf/worker": {
+      "types": "./dist/pdf/worker.d.ts",
+      "import": "./dist/pdf/worker.js"
+    }
+  },
+  "files": [
+    "dist",
+    "wasm",
+    "pdfcraft.rev"
+  ],
+  "scripts": {
+    "build:wasm": "sh scripts/build-wasm.sh",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.0.0"
+  }
+}
