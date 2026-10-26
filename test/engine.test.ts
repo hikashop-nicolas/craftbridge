@@ -36,6 +36,16 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     delete_object: (_p, kind, index) => void calls.push(`delete_object ${kind} ${index}`),
     set_text: (_p, kind, index, text, style) => void calls.push(`set_text ${kind} ${index} ${text} ${style}`),
     cover: (_p, view) => void calls.push(`cover ${view.join(",")}`),
+    find: (q, cs, ww, limit) => (calls.push(`find ${q} ${cs} ${ww} ${limit}`), JSON.stringify([{ page: 0, text: q, rects: [[1, 2, 3, 4]] }])),
+    select_text: (_p, from, to) => (calls.push(`select ${from} ${to}`), JSON.stringify({ text: "x", rects: [[1, 2, 3, 4]] })),
+    markup: (_p, kind, rects, color) => void calls.push(`markup ${kind} ${rects} ${color ?? "-"}`),
+    add_link: (_p, view, target) => void calls.push(`add_link ${view} ${target}`),
+    links: () => JSON.stringify([{ index: 0, view: [1, 2, 3, 4], uri: "https://a.example" }]),
+    delete_link: (_p, i) => void calls.push(`delete_link ${i}`),
+    annotations: () => JSON.stringify([{ index: 1, subtype: "Highlight", contents: null, view: [1, 2, 3, 4] }]),
+    delete_annotation: (_p, i) => void calls.push(`delete_annotation ${i}`),
+    fields: () => JSON.stringify([{ name: "n", kind: "text", value: null, view: [1, 2, 3, 4] }]),
+    set_field: (name, value) => void calls.push(`set_field ${name} ${value}`),
   };
   return {
     calls,
@@ -134,6 +144,35 @@ describe("Engine", () => {
       "delete_object image 0",
       'set_text text 2 undefined {"size":20}',
       "cover 1,1,5,5",
+    ]);
+  });
+
+  it("passes review calls through", () => {
+    const { module, calls } = fakeModule();
+    const e = new Engine(module);
+    open(e);
+    expect(e.handle({ op: "find", query: "ab" }).value).toMatchObject([{ text: "ab" }]);
+    e.handle({ op: "find", query: "cd", caseSensitive: true, wholeWords: true, limit: 5 });
+    expect(e.handle({ op: "selectText", page: 0, from: [1, 2], to: [3, 4] }).value).toMatchObject({ text: "x" });
+    e.handle({ op: "markup", page: 0, kind: "underline", rects: [[1, 2, 3, 4]], color: [1, 0, 0] });
+    e.handle({ op: "markup", page: 0, kind: "highlight", rects: [[1, 2, 3, 4]] });
+    e.handle({ op: "addLink", page: 0, view: [1, 2, 3, 4], target: "page:2" });
+    expect(e.handle({ op: "links", page: 0 }).value).toMatchObject([{ uri: "https://a.example" }]);
+    e.handle({ op: "deleteLink", page: 0, index: 2.7 });
+    expect(e.handle({ op: "annotations", page: 0 }).value).toMatchObject([{ subtype: "Highlight" }]);
+    e.handle({ op: "deleteAnnotation", page: 0, index: 1 });
+    expect(e.handle({ op: "fields", page: 0 }).value).toMatchObject([{ name: "n" }]);
+    e.handle({ op: "setField", name: "n", value: { check: true } });
+    expect(calls).toEqual([
+      "find ab false false 200",
+      "find cd true true 5",
+      "select 1,2 3,4",
+      'markup underline [[1,2,3,4]] 1,0,0',
+      'markup highlight [[1,2,3,4]] -',
+      "add_link 1,2,3,4 page:2",
+      "delete_link 2",
+      "delete_annotation 1",
+      'set_field n {"check":true}',
     ]);
   });
 });

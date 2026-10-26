@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { Box, Call, DocumentInfo, History, ObjectRef, PageObject, Rendered, Reply, TextBlock, TextStyle, Tile } from "./protocol";
+import type { AnnotationInfo, Box, Call, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, Reply, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { Box, DocumentInfo, History, ObjectRef, PageObject, Rendered, TextBlock, TextStyle, Tile };
+export type { AnnotationInfo, Box, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -111,6 +111,52 @@ export class PdfDocument {
   /** Paints a white box over `view` (the covered content stays in the file). */
   async cover(page: number, view: Box): Promise<void> {
     await this.call({ op: "cover", page, view });
+  }
+
+  /** Every match of `query` in the text of every page, with the boxes to show them. */
+  find(query: string, options: { caseSensitive?: boolean; wholeWords?: boolean; limit?: number } = {}): Promise<FindMatch[]> {
+    return this.call({ op: "find", query, ...options });
+  }
+
+  /** The text from the glyph nearest `from` to the one nearest `to`, with a box per line. */
+  selectText(page: number, from: [number, number], to: [number, number]): Promise<TextSelection> {
+    return this.call({ op: "selectText", page, from, to });
+  }
+
+  /** Highlights, underlines or strikes out the lines in `rects` (what `selectText` returned). */
+  async markup(page: number, kind: MarkupKind, rects: Box[], color?: [number, number, number]): Promise<void> {
+    await this.call({ op: "markup", page, kind, rects, color });
+  }
+
+  /** Adds a link over `view`: an http(s) or mailto: address, or "page:N" (1-based). */
+  async addLink(page: number, view: Box, target: string): Promise<void> {
+    await this.call({ op: "addLink", page, view, target });
+  }
+
+  links(page: number): Promise<LinkInfo[]> {
+    return this.call({ op: "links", page });
+  }
+
+  async deleteLink(page: number, index: number): Promise<void> {
+    await this.call({ op: "deleteLink", page, index });
+  }
+
+  /** The page's marks and comments: highlights, notes, shapes, covers. */
+  annotations(page: number): Promise<AnnotationInfo[]> {
+    return this.call({ op: "annotations", page });
+  }
+
+  async deleteAnnotation(page: number, index: number): Promise<void> {
+    await this.call({ op: "deleteAnnotation", page, index });
+  }
+
+  /** The form fields on the page. */
+  fields(page: number): Promise<FieldInfo[]> {
+    return this.call({ op: "fields", page });
+  }
+
+  async setField(name: string, value: FieldValue): Promise<void> {
+    await this.call({ op: "setField", name, value });
   }
 
   async deletePages(pages: number[]): Promise<void> {

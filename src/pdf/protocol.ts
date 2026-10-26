@@ -55,6 +55,47 @@ export interface ObjectRef {
   index: number;
 }
 
+/** One place a search found its text: the page, the matched words and a box per line they span. */
+export interface FindMatch {
+  page: number;
+  text: string;
+  rects: Box[];
+}
+
+export interface TextSelection {
+  text: string;
+  rects: Box[];
+}
+
+export type MarkupKind = "highlight" | "underline" | "strikeout";
+
+export interface LinkInfo {
+  index: number;
+  view: Box;
+  /** A web or mail address. */
+  uri?: string;
+  /** A page of the document, 0-based. */
+  page?: number;
+}
+
+export interface AnnotationInfo {
+  index: number;
+  subtype: string;
+  contents: string | null;
+  view: Box;
+}
+
+export type FieldKind = "text" | "check" | "radio" | "button" | "choice" | "signature";
+
+export interface FieldInfo {
+  name: string;
+  kind: FieldKind;
+  value: string | null;
+  view: Box;
+}
+
+export type FieldValue = { text: string } | { check: boolean } | { choice: string[] };
+
 export interface Rendered {
   width: number;
   height: number;
@@ -89,6 +130,16 @@ export type Call =
   | { op: "deleteObject"; page: number; target: ObjectRef }
   | { op: "setText"; page: number; target: ObjectRef; text?: string; style?: TextStyle }
   | { op: "cover"; page: number; view: Box }
+  | { op: "find"; query: string; caseSensitive?: boolean; wholeWords?: boolean; limit?: number }
+  | { op: "selectText"; page: number; from: [number, number]; to: [number, number] }
+  | { op: "markup"; page: number; kind: MarkupKind; rects: Box[]; color?: [number, number, number] }
+  | { op: "addLink"; page: number; view: Box; target: string }
+  | { op: "links"; page: number }
+  | { op: "deleteLink"; page: number; index: number }
+  | { op: "annotations"; page: number }
+  | { op: "deleteAnnotation"; page: number; index: number }
+  | { op: "fields"; page: number }
+  | { op: "setField"; name: string; value: FieldValue }
   | { op: "history" }
   | { op: "undo" }
   | { op: "redo" }

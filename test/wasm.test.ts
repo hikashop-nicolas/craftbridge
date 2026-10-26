@@ -94,4 +94,22 @@ describe.skipIf(!built)("the real engine", () => {
     expect((e.handle({ op: "objects", page: 0 }).value as { kind: string }[]).some((o) => o.kind === "added")).toBe(false);
     expect(() => e.handle({ op: "moveObjects", page: 0, targets: [{ kind: "added", index: 3 }], dx: 1, dy: 1 })).toThrow();
   });
+
+  it("finds text, selects it, marks it up and adds a link", async () => {
+    const e = await engine();
+    e.handle({ op: "open", bytes: fixture(2) });
+    const found = e.handle({ op: "find", query: "page 2" }).value as { page: number; text: string; rects: number[][] }[];
+    expect(found).toMatchObject([{ page: 1, text: "Page 2" }]);
+    expect(found[0]!.rects).toHaveLength(1);
+    const [x0, y0, x1, y1] = found[0]!.rects[0]!;
+    const selection = e.handle({ op: "selectText", page: 1, from: [x0! + 1, (y0! + y1!) / 2], to: [x1! - 1, (y0! + y1!) / 2] }).value as { text: string; rects: [number, number, number, number][] };
+    expect(selection.text).toContain("Page");
+    e.handle({ op: "markup", page: 1, kind: "highlight", rects: selection.rects, color: [1, 0.9, 0] });
+    expect(e.handle({ op: "annotations", page: 1 }).value).toMatchObject([{ subtype: "Highlight" }]);
+    e.handle({ op: "addLink", page: 0, view: [10, 10, 100, 40], target: "https://example.com" });
+    expect(e.handle({ op: "links", page: 0 }).value).toMatchObject([{ uri: "https://example.com" }]);
+    expect(() => e.handle({ op: "addLink", page: 0, view: [10, 10, 100, 40], target: "javascript:alert(1)" })).toThrow();
+    expect(e.handle({ op: "fields", page: 0 }).value).toEqual([]);
+    expect(e.handle({ op: "find", query: "" }).value).toEqual([]);
+  });
 });

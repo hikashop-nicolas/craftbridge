@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { Call, DocumentInfo, History, PageObject, Rendered, TextBlock } from "./protocol";
+import type { AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, History, LinkInfo, PageObject, Rendered, TextBlock, TextSelection } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -23,6 +23,16 @@ export interface WasmPdf {
   delete_object(page: number, kind: string, index: number): void;
   set_text(page: number, kind: string, index: number, text: string | undefined, style: string): void;
   cover(page: number, view: number[]): void;
+  find(query: string, caseSensitive: boolean, wholeWords: boolean, limit: number): string;
+  select_text(page: number, from: number[], to: number[]): string;
+  markup(page: number, kind: string, rects: string, color?: number[]): void;
+  add_link(page: number, view: number[], target: string): void;
+  links(page: number): string;
+  delete_link(page: number, index: number): void;
+  annotations(page: number): string;
+  delete_annotation(page: number, index: number): void;
+  fields(page: number): string;
+  set_field(name: string, value: string): void;
   can_undo(): string | undefined | null;
   can_redo(): string | undefined | null;
   undo(): void;
@@ -131,6 +141,31 @@ export class Engine {
         return { value: null };
       case "cover":
         this.need().cover(call.page, call.view);
+        return { value: null };
+      case "find":
+        return { value: JSON.parse(this.need().find(call.query, call.caseSensitive ?? false, call.wholeWords ?? false, call.limit ?? 200)) as FindMatch[] };
+      case "selectText":
+        return { value: JSON.parse(this.need().select_text(call.page, call.from, call.to)) as TextSelection };
+      case "markup":
+        this.need().markup(call.page, call.kind, JSON.stringify(call.rects), call.color);
+        return { value: null };
+      case "addLink":
+        this.need().add_link(call.page, call.view, call.target);
+        return { value: null };
+      case "links":
+        return { value: JSON.parse(this.need().links(call.page)) as LinkInfo[] };
+      case "deleteLink":
+        this.need().delete_link(call.page, Math.trunc(call.index));
+        return { value: null };
+      case "annotations":
+        return { value: JSON.parse(this.need().annotations(call.page)) as AnnotationInfo[] };
+      case "deleteAnnotation":
+        this.need().delete_annotation(call.page, Math.trunc(call.index));
+        return { value: null };
+      case "fields":
+        return { value: JSON.parse(this.need().fields(call.page)) as FieldInfo[] };
+      case "setField":
+        this.need().set_field(call.name, JSON.stringify(call.value));
         return { value: null };
       case "history": {
         const pdf = this.need();
