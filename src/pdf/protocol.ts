@@ -35,6 +35,8 @@ export interface PageObject {
   text: string | null;
   /** Where it is drawn: points from the page's top-left, y down. */
   view: Box;
+  /** How a text object looks (null for a picture). `align` is null for text the page already had. */
+  style: (Required<Omit<TextStyle, "align">> & { align: TextStyle["align"] | null }) | null;
 }
 
 export interface TextStyle {
