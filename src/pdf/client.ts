@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
+export type { AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -247,6 +247,99 @@ export class PdfDocument {
   /** Sets a field's script for an event; an empty script removes it. */
   async setFieldScript(name: string, event: ScriptEvent, script: string): Promise<void> {
     await this.call({ op: "setFieldScript", name, event, script });
+  }
+
+  /** Marks areas of a page (displayed boxes) for redaction; `overlay` shows on them once applied. */
+  async addRedaction(page: number, boxes: Box[], overlay = ""): Promise<void> {
+    await this.call({ op: "addRedaction", page, boxes, overlay });
+  }
+
+  /** How many redaction marks wait to be applied. */
+  redactionCount(): Promise<number> {
+    return this.call({ op: "redactionCount" });
+  }
+
+  /** Removes for good what the marks cover. The engine refuses when something under a mark would still be drawn. */
+  async applyRedactions(): Promise<void> {
+    await this.call({ op: "applyRedactions" });
+  }
+
+  async clearRedactions(): Promise<void> {
+    await this.call({ op: "clearRedactions" });
+  }
+
+  /** What each kind of hidden information (metadata, attachments, comments, ...) would remove. */
+  hiddenInfo(): Promise<HiddenInfo[]> {
+    return this.call({ op: "hiddenInfo" });
+  }
+
+  async removeHidden(ids: string[]): Promise<void> {
+    await this.call({ op: "removeHidden", ids });
+  }
+
+  /** A watermark on every page (or `spec.pages`), text or a picture; it replaces the earlier one. */
+  async addWatermark(spec: WatermarkSpec, picture?: { name: string; bytes: Uint8Array }): Promise<void> {
+    await this.call({ op: "addWatermark", spec, picture });
+  }
+
+  /** A header and footer; it replaces the earlier one. */
+  async addHeaderFooter(spec: HeaderFooterSpec): Promise<void> {
+    await this.call({ op: "addHeaderFooter", spec });
+  }
+
+  /** A background colour or picture behind the content; it replaces the earlier one. */
+  async addBackground(spec: BackgroundSpec, picture?: { name: string; bytes: Uint8Array }): Promise<void> {
+    await this.call({ op: "addBackground", spec, picture });
+  }
+
+  async removeMarks(kind: MarkKind): Promise<void> {
+    await this.call({ op: "removeMarks", kind });
+  }
+
+  /** The bookmarks in outline order. */
+  bookmarks(): Promise<BookmarkInfo[]> {
+    return this.call({ op: "bookmarks" });
+  }
+
+  /** Adds a bookmark as child `index` of the bookmark at `parent` (`[]`: the top level). */
+  async addBookmark(parent: number[], index: number, title: string, page: number): Promise<void> {
+    await this.call({ op: "addBookmark", parent, index, title, page });
+  }
+
+  async renameBookmark(path: number[], title: string): Promise<void> {
+    await this.call({ op: "renameBookmark", path, title });
+  }
+
+  async deleteBookmark(path: number[]): Promise<void> {
+    await this.call({ op: "deleteBookmark", path });
+  }
+
+  /** Moves a bookmark to child `index` of `toParent`; the indices count after it has been taken out. */
+  async moveBookmark(from: number[], toParent: number[], index: number): Promise<void> {
+    await this.call({ op: "moveBookmark", from, toParent, index });
+  }
+
+  async setBookmarkPage(path: number[], page: number): Promise<void> {
+    await this.call({ op: "setBookmarkPage", path, page });
+  }
+
+  /** The files attached to the document and to its pages. */
+  attachments(): Promise<AttachmentInfo[]> {
+    return this.call({ op: "attachments" });
+  }
+
+  async addAttachment(name: string, bytes: Uint8Array, description?: string): Promise<void> {
+    await this.call({ op: "addAttachment", name, bytes, description });
+  }
+
+  /** Removes a document-level attachment by its `key`. */
+  async deleteAttachment(key: string): Promise<void> {
+    await this.call({ op: "deleteAttachment", key });
+  }
+
+  /** The contents of attachment `index`, as the document is now. */
+  attachmentBytes(index: number): Promise<Uint8Array> {
+    return this.call({ op: "attachmentBytes", index });
   }
 
   /** What field scripts printed or asked for during edits since the last call. */

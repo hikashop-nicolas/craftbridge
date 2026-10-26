@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { ScriptEvent, AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
+import type { AttachmentInfo, BookmarkInfo, HiddenInfo, ScriptEvent, AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -46,6 +46,26 @@ export interface WasmPdf {
   run_action(action: string, target?: string): string;
   take_js_output(): string;
   field_scripts(name: string): string;
+  add_redaction(page: number, boxes: number[], overlay: string): void;
+  redaction_count(): number;
+  apply_redactions(): void;
+  clear_redactions(): void;
+  hidden_info(): string;
+  remove_hidden(ids: string[]): void;
+  add_watermark(spec: string, name?: string, bytes?: Uint8Array): void;
+  add_header_footer(spec: string): void;
+  add_background(spec: string, name?: string, bytes?: Uint8Array): void;
+  remove_marks(kind: string): void;
+  bookmarks(): string;
+  add_bookmark(parent: string, index: number, title: string, page: number): void;
+  rename_bookmark(path: string, title: string): void;
+  delete_bookmark(path: string): void;
+  move_bookmark(from: string, toParent: string, index: number): void;
+  set_bookmark_page(path: string, page: number): void;
+  attachments(): string;
+  add_attachment(name: string, bytes: Uint8Array, description?: string): void;
+  delete_attachment(key: string): void;
+  attachment_bytes(index: number): Uint8Array;
   set_field_script(name: string, event: string, script: string): void;
   protect(spec: string): void;
   remove_protection(): void;
@@ -226,6 +246,61 @@ export class Engine {
         return { value: null };
       case "runAction":
         return { value: JSON.parse(this.need().run_action(JSON.stringify(call.action), call.target)) as JsOutput };
+      case "addRedaction":
+        this.need().add_redaction(call.page, call.boxes.flat(), call.overlay ?? "");
+        return { value: null };
+      case "redactionCount":
+        return { value: this.need().redaction_count() };
+      case "applyRedactions":
+        this.need().apply_redactions();
+        return { value: null };
+      case "clearRedactions":
+        this.need().clear_redactions();
+        return { value: null };
+      case "hiddenInfo":
+        return { value: JSON.parse(this.need().hidden_info()) as HiddenInfo[] };
+      case "removeHidden":
+        this.need().remove_hidden(call.ids);
+        return { value: null };
+      case "addWatermark":
+        this.need().add_watermark(JSON.stringify(call.spec), call.picture?.name, call.picture?.bytes);
+        return { value: null };
+      case "addHeaderFooter":
+        this.need().add_header_footer(JSON.stringify(call.spec));
+        return { value: null };
+      case "addBackground":
+        this.need().add_background(JSON.stringify(call.spec), call.picture?.name, call.picture?.bytes);
+        return { value: null };
+      case "removeMarks":
+        this.need().remove_marks(call.kind);
+        return { value: null };
+      case "bookmarks":
+        return { value: JSON.parse(this.need().bookmarks()) as BookmarkInfo[] };
+      case "addBookmark":
+        this.need().add_bookmark(JSON.stringify(call.parent), Math.trunc(call.index), call.title, Math.trunc(call.page));
+        return { value: null };
+      case "renameBookmark":
+        this.need().rename_bookmark(JSON.stringify(call.path), call.title);
+        return { value: null };
+      case "deleteBookmark":
+        this.need().delete_bookmark(JSON.stringify(call.path));
+        return { value: null };
+      case "moveBookmark":
+        this.need().move_bookmark(JSON.stringify(call.from), JSON.stringify(call.toParent), Math.trunc(call.index));
+        return { value: null };
+      case "setBookmarkPage":
+        this.need().set_bookmark_page(JSON.stringify(call.path), Math.trunc(call.page));
+        return { value: null };
+      case "attachments":
+        return { value: JSON.parse(this.need().attachments()) as AttachmentInfo[] };
+      case "addAttachment":
+        this.need().add_attachment(call.name, call.bytes, call.description);
+        return { value: null };
+      case "deleteAttachment":
+        this.need().delete_attachment(call.key);
+        return { value: null };
+      case "attachmentBytes":
+        return { value: this.need().attachment_bytes(Math.trunc(call.index)) };
       case "fieldScripts":
         return { value: JSON.parse(this.need().field_scripts(call.name)) as Partial<Record<ScriptEvent, string>> };
       case "setFieldScript":

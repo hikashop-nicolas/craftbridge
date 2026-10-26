@@ -211,6 +211,72 @@ export interface JsOutput {
   result?: string | null;
 }
 
+/** What one kind of hidden information would remove. `id` is one of metadata, attachments, comments, formFields, hiddenText, hiddenLayers, bookmarks, links, privateData. */
+export interface HiddenInfo {
+  id: string;
+  count: number;
+}
+
+export interface WatermarkSpec {
+  text?: string;
+  /** Font size in points; 0 or left out fits the page. */
+  size?: number;
+  color?: [number, number, number];
+  opacity?: number;
+  /** Degrees counter-clockwise. */
+  rotation?: number;
+  behind?: boolean;
+  /** A picture's size relative to the page. */
+  scale?: number;
+  /** 0-based pages; every page when left out. */
+  pages?: number[];
+}
+
+export interface HeaderFooterSpec {
+  /** Left, centre and right of the header, then of the footer. `<<1>>` is the page number and `<<n>>` the page count. */
+  text: [string, string, string, string, string, string];
+  size?: number;
+  color?: [number, number, number];
+  /** Top, bottom, left, right in points. */
+  margins?: [number, number, number, number];
+  /** The number `<<1>>` shows on the first page. */
+  start?: number;
+  /** Shrink the page content so the text does not cover it. */
+  shrink?: boolean;
+  pages?: number[];
+}
+
+export interface BackgroundSpec {
+  color?: [number, number, number];
+  opacity?: number;
+  scale?: number;
+  pages?: number[];
+}
+
+export type MarkKind = "headerFooter" | "watermark" | "background";
+
+export interface BookmarkInfo {
+  /** Child indices from the top level. */
+  path: number[];
+  title: string;
+  page: number | null;
+  open: boolean;
+  bold: boolean;
+  italic: boolean;
+}
+
+export interface AttachmentInfo {
+  index: number;
+  name: string;
+  description: string | null;
+  size: number | null;
+  /** In the document, or attached to a page. */
+  where: "document" | "page";
+  /** A document-level attachment's key, which removes it. */
+  key?: string;
+  page?: number;
+}
+
 export interface LayerInfo {
   index: number;
   name: string;
@@ -299,6 +365,26 @@ export type Call =
   | { op: "fieldScripts"; name: string }
   | { op: "setFieldScript"; name: string; event: ScriptEvent; script: string }
   | { op: "takeJsOutput" }
+  | { op: "addRedaction"; page: number; boxes: Box[]; overlay?: string }
+  | { op: "redactionCount" }
+  | { op: "applyRedactions" }
+  | { op: "clearRedactions" }
+  | { op: "hiddenInfo" }
+  | { op: "removeHidden"; ids: string[] }
+  | { op: "addWatermark"; spec: WatermarkSpec; picture?: { name: string; bytes: Uint8Array } }
+  | { op: "addHeaderFooter"; spec: HeaderFooterSpec }
+  | { op: "addBackground"; spec: BackgroundSpec; picture?: { name: string; bytes: Uint8Array } }
+  | { op: "removeMarks"; kind: MarkKind }
+  | { op: "bookmarks" }
+  | { op: "addBookmark"; parent: number[]; index: number; title: string; page: number }
+  | { op: "renameBookmark"; path: number[]; title: string }
+  | { op: "deleteBookmark"; path: number[] }
+  | { op: "moveBookmark"; from: number[]; toParent: number[]; index: number }
+  | { op: "setBookmarkPage"; path: number[]; page: number }
+  | { op: "attachments" }
+  | { op: "addAttachment"; name: string; bytes: Uint8Array; description?: string }
+  | { op: "deleteAttachment"; key: string }
+  | { op: "attachmentBytes"; index: number }
   | { op: "protect"; spec: ProtectSpec }
   | { op: "removeProtection" }
   | { op: "layers" }
@@ -345,6 +431,21 @@ export type EditCall = Extract<
   | { op: "deleteFieldWidget" }
   | { op: "setFieldProps" }
   | { op: "setFieldActions" }
+  | { op: "addRedaction" }
+  | { op: "applyRedactions" }
+  | { op: "clearRedactions" }
+  | { op: "removeHidden" }
+  | { op: "addWatermark" }
+  | { op: "addHeaderFooter" }
+  | { op: "addBackground" }
+  | { op: "removeMarks" }
+  | { op: "addBookmark" }
+  | { op: "renameBookmark" }
+  | { op: "deleteBookmark" }
+  | { op: "moveBookmark" }
+  | { op: "setBookmarkPage" }
+  | { op: "addAttachment" }
+  | { op: "deleteAttachment" }
   | { op: "runAction" }
   | { op: "setFieldScript" }
   | { op: "protect" }

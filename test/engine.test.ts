@@ -35,6 +35,26 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
       calls.push(`run ${action} ${target ?? "-"}`);
       return JSON.stringify({ alerts: ["done"], console: [], requests: [{ type: "print" }], errors: [], result: null });
     },
+    add_redaction: (page, boxes, overlay) => void calls.push(`redact ${page} ${boxes.join(",")} ${overlay}`),
+    redaction_count: () => 2,
+    apply_redactions: () => void calls.push("apply_redactions"),
+    clear_redactions: () => void calls.push("clear_redactions"),
+    hidden_info: () => JSON.stringify([{ id: "metadata", count: 3 }]),
+    remove_hidden: (ids) => void calls.push(`hidden ${ids.join(",")}`),
+    add_watermark: (spec, name, bytes) => void calls.push(`watermark ${spec} ${name ?? "-"} ${bytes?.length ?? "-"}`),
+    add_header_footer: (spec) => void calls.push(`header ${spec}`),
+    add_background: (spec, name, bytes) => void calls.push(`background ${spec} ${name ?? "-"} ${bytes?.length ?? "-"}`),
+    remove_marks: (kind) => void calls.push(`marks ${kind}`),
+    bookmarks: () => JSON.stringify([{ path: [0], title: "One", page: 0, open: false, bold: false, italic: false }]),
+    add_bookmark: (parent, index, title, page) => void calls.push(`bookmark ${parent} ${index} ${title} ${page}`),
+    rename_bookmark: (path, title) => void calls.push(`rename ${path} ${title}`),
+    delete_bookmark: (path) => void calls.push(`unbookmark ${path}`),
+    move_bookmark: (from, to, index) => void calls.push(`movebookmark ${from} ${to} ${index}`),
+    set_bookmark_page: (path, page) => void calls.push(`bookmarkpage ${path} ${page}`),
+    attachments: () => JSON.stringify([{ index: 0, name: "a.txt", description: null, size: 3, where: "document", key: "a.txt" }]),
+    add_attachment: (name, bytes, description) => void calls.push(`attach ${name} ${bytes.length} ${description ?? "-"}`),
+    delete_attachment: (key) => void calls.push(`detach ${key}`),
+    attachment_bytes: () => new Uint8Array([104, 105]),
     field_scripts: () => JSON.stringify({ calculate: "event.value = 1;" }),
     set_field_script: (name, event, script) => void calls.push(`script ${name} ${event} ${script}`),
     take_js_output: () => JSON.stringify({ alerts: [], console: ["hi"], requests: [], errors: [] }),
@@ -227,6 +247,26 @@ describe("Engine", () => {
     expect(e.handle({ op: "fieldActions", name: "Go" }).value).toMatchObject([{ trigger: "mouse_up", kind: "uri" }]);
     e.handle({ op: "setFieldActions", name: "Go", actions: [{ trigger: "mouse_up", kind: "reset", fields: [] }] });
     expect(e.handle({ op: "runAction", action: { kind: "javascript", script: "app.alert('x')" }, target: "Go" }).value).toMatchObject({ alerts: ["done"], requests: [{ type: "print" }] });
+    e.handle({ op: "addRedaction", page: 0, boxes: [[1, 2, 3, 4], [5, 6, 7, 8]], overlay: "X" });
+    expect(e.handle({ op: "redactionCount" }).value).toBe(2);
+    e.handle({ op: "applyRedactions" });
+    e.handle({ op: "clearRedactions" });
+    expect(e.handle({ op: "hiddenInfo" }).value).toEqual([{ id: "metadata", count: 3 }]);
+    e.handle({ op: "removeHidden", ids: ["metadata", "comments"] });
+    e.handle({ op: "addWatermark", spec: { text: "Draft" }, picture: { name: "p.png", bytes: new Uint8Array(4) } });
+    e.handle({ op: "addHeaderFooter", spec: { text: ["", "", "", "", "<<1>>", ""] } });
+    e.handle({ op: "addBackground", spec: { color: [1, 1, 0.8] } });
+    e.handle({ op: "removeMarks", kind: "watermark" });
+    expect(e.handle({ op: "bookmarks" }).value).toMatchObject([{ title: "One" }]);
+    e.handle({ op: "addBookmark", parent: [], index: 1.7, title: "Two", page: 1.2 });
+    e.handle({ op: "renameBookmark", path: [0], title: "Uno" });
+    e.handle({ op: "moveBookmark", from: [1], toParent: [0], index: 0 });
+    e.handle({ op: "setBookmarkPage", path: [0], page: 2 });
+    e.handle({ op: "deleteBookmark", path: [0] });
+    expect(e.handle({ op: "attachments" }).value).toMatchObject([{ name: "a.txt" }]);
+    e.handle({ op: "addAttachment", name: "b.txt", bytes: new Uint8Array(2) });
+    expect(e.handle({ op: "attachmentBytes", index: 0 }).value).toEqual(new Uint8Array([104, 105]));
+    e.handle({ op: "deleteAttachment", key: "a.txt" });
     expect(e.handle({ op: "fieldScripts", name: "Total" }).value).toEqual({ calculate: "event.value = 1;" });
     e.handle({ op: "setFieldScript", name: "Total", event: "calculate", script: "event.value = 2;" });
     expect(e.handle({ op: "takeJsOutput" }).value).toMatchObject({ console: ["hi"] });
@@ -251,6 +291,21 @@ describe("Engine", () => {
       'field_props Agree {"required":true}',
       'actions Go [{"trigger":"mouse_up","kind":"reset","fields":[]}]',
       `run {"kind":"javascript","script":"app.alert('x')"} Go`,
+      "redact 0 1,2,3,4,5,6,7,8 X",
+      "apply_redactions",
+      "clear_redactions",
+      "hidden metadata,comments",
+      'watermark {"text":"Draft"} p.png 4',
+      'header {"text":["","","","","<<1>>",""]}',
+      'background {"color":[1,1,0.8]} - -',
+      "marks watermark",
+      "bookmark [] 1 Two 1",
+      "rename [0] Uno",
+      "movebookmark [1] [0] 0",
+      "bookmarkpage [0] 2",
+      "unbookmark [0]",
+      "attach b.txt 2 -",
+      "detach a.txt",
       "script Total calculate event.value = 2;",
       'protect {"open":"pw","printing":"low"}',
       "remove_protection",

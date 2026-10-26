@@ -159,6 +159,33 @@ describe.skipIf(!built)("the real engine", () => {
     expect(after?.value).toBe("10");
   });
 
+  it("redacts, marks pages, keeps bookmarks and attachments in the browser build", async () => {
+    const e = await engine();
+    e.handle({ op: "open", bytes: fixture(3) });
+    const hits = (q: string): number[] => (e.handle({ op: "find", query: q }).value as { page: number }[]).map((m) => m.page);
+    const first = (e.handle({ op: "find", query: "Page 2" }).value as { rects: [number, number, number, number][] }[])[0]!;
+    e.handle({ op: "addRedaction", page: 1, boxes: first.rects });
+    expect(e.handle({ op: "redactionCount" }).value).toBe(1);
+    e.handle({ op: "applyRedactions" });
+    expect(hits("Page 2")).toEqual([]);
+    expect(hits("Page 1")).toEqual([0]);
+    e.handle({ op: "addHeaderFooter", spec: { text: ["Draft", "", "", "", "<<1>> / <<n>>", ""] } });
+    expect(hits("Draft")).toEqual([0, 1, 2]);
+    e.handle({ op: "addWatermark", spec: { text: "SECRET" } });
+    expect(hits("SECRET")).toEqual([0, 1, 2]);
+    e.handle({ op: "removeMarks", kind: "watermark" });
+    expect(hits("SECRET")).toEqual([]);
+    e.handle({ op: "addBookmark", parent: [], index: 0, title: "Start", page: 0 });
+    e.handle({ op: "addBookmark", parent: [0], index: 0, title: "Deep", page: 2 });
+    expect(e.handle({ op: "bookmarks" }).value).toMatchObject([{ title: "Start", path: [0] }, { title: "Deep", path: [0, 0], page: 2 }]);
+    e.handle({ op: "addAttachment", name: "notes.txt", bytes: new TextEncoder().encode("hello") });
+    const files = e.handle({ op: "attachments" }).value as { name: string; key: string }[];
+    expect(files.map((f) => f.name)).toEqual(["notes.txt"]);
+    expect(new TextDecoder().decode(e.handle({ op: "attachmentBytes", index: 0 }).value as Uint8Array)).toBe("hello");
+    e.handle({ op: "deleteAttachment", key: files[0]!.key });
+    expect(e.handle({ op: "attachments" }).value).toEqual([]);
+  });
+
   it("signs with an RSA certificate in the browser build", async () => {
     const p12 = process.env.RSA_P12;
     if (!p12) return;
