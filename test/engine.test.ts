@@ -31,6 +31,7 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     objects: () => JSON.stringify([{ kind: "text", index: 0, type: "text", text: "Hi", view: [0, 0, 1, 1] }]),
     move_objects: (_p, targets, dx, dy) => void calls.push(`move_objects ${targets} ${dx} ${dy}`),
     resize_object: (_p, kind, index, view) => void calls.push(`resize ${kind} ${index} ${view.join(",")}`),
+    rotate_object: (_p, kind, index, turns) => void calls.push(`rotate ${kind} ${index} ${turns}`),
     add_text: (_p, view, text, style) => void calls.push(`add_text ${view.join(",")} ${text} ${style}`),
     add_image: (_p, name, bytes) => void calls.push(`add_image ${name} ${bytes.length}`),
     delete_object: (_p, kind, index) => void calls.push(`delete_object ${kind} ${index}`),
@@ -129,6 +130,7 @@ describe("Engine", () => {
     expect(e.handle({ op: "objects", page: 0 }).value).toMatchObject([{ kind: "text", text: "Hi" }]);
     e.handle({ op: "moveObjects", page: 0, targets: [{ kind: "text", index: 0 }], dx: 3, dy: -4 });
     e.handle({ op: "resizeObject", page: 0, target: { kind: "added", index: 1.9 }, view: [1, 2, 3, 4] });
+    e.handle({ op: "rotateObject", page: 0, target: { kind: "image", index: 2 }, quarterTurns: -1 });
     e.handle({ op: "addText", page: 0, view: [0, 0, 9, 9], text: "T", style: { bold: true } });
     e.handle({ op: "addText", page: 0, view: [0, 0, 9, 9], text: "U" });
     e.handle({ op: "addImage", page: 0, name: "a.png", bytes: new Uint8Array(3) });
@@ -138,6 +140,7 @@ describe("Engine", () => {
     expect(calls).toEqual([
       'move_objects [{"kind":"text","index":0}] 3 -4',
       "resize added 1 1,2,3,4",
+      "rotate image 2 -1",
       'add_text 0,0,9,9 T {"bold":true}',
       "add_text 0,0,9,9 U {}",
       "add_image a.png 3",

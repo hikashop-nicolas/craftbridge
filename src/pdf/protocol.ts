@@ -125,6 +125,7 @@ export type Call =
   | { op: "objects"; page: number }
   | { op: "moveObjects"; page: number; targets: ObjectRef[]; dx: number; dy: number }
   | { op: "resizeObject"; page: number; target: ObjectRef; view: Box }
+  | { op: "rotateObject"; page: number; target: ObjectRef; quarterTurns: number }
   | { op: "addText"; page: number; view: Box; text: string; style?: TextStyle }
   | { op: "addImage"; page: number; name: string; bytes: Uint8Array; view?: Box }
   | { op: "deleteObject"; page: number; target: ObjectRef }
@@ -158,6 +159,7 @@ export type EditCall = Extract<
   | { op: "insertBlankPage" }
   | { op: "moveObjects" }
   | { op: "resizeObject" }
+  | { op: "rotateObject" }
   | { op: "addText" }
   | { op: "addImage" }
   | { op: "deleteObject" }

@@ -94,6 +94,10 @@ export class PdfDocument {
   }
 
   /** Gives an object a box. An added item or an image takes it; existing text rewraps to its width. */
+  async rotateObject(page: number, target: ObjectRef, quarterTurns: number): Promise<void> {
+    await this.call({ op: "rotateObject", page, target, quarterTurns });
+  }
+
   async resizeObject(page: number, target: ObjectRef, view: Box): Promise<void> {
     await this.call({ op: "resizeObject", page, target, view });
   }

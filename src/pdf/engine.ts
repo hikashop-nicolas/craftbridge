@@ -18,6 +18,7 @@ export interface WasmPdf {
   objects(page: number): string;
   move_objects(page: number, targets: string, dx: number, dy: number): void;
   resize_object(page: number, kind: string, index: number, view: number[]): void;
+  rotate_object(page: number, kind: string, index: number, quarter_turns: number): void;
   add_text(page: number, view: number[], text: string, style: string): void;
   add_image(page: number, name: string, bytes: Uint8Array, view?: number[]): void;
   delete_object(page: number, kind: string, index: number): void;
@@ -123,6 +124,9 @@ export class Engine {
         return { value: JSON.parse(this.need().objects(call.page)) as PageObject[] };
       case "moveObjects":
         this.need().move_objects(call.page, JSON.stringify(call.targets), call.dx, call.dy);
+        return { value: null };
+      case "rotateObject":
+        this.need().rotate_object(call.page, call.target.kind, Math.trunc(call.target.index), Math.trunc(call.quarterTurns));
         return { value: null };
       case "resizeObject":
         this.need().resize_object(call.page, call.target.kind, Math.trunc(call.target.index), call.view);
