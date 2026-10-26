@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, History, LinkInfo, PageObject, Rendered, TextBlock, TextSelection } from "./protocol";
+import type { AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, History, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -35,6 +35,19 @@ export interface WasmPdf {
   delete_annotation(page: number, index: number): void;
   fields(page: number): string;
   set_field(name: string, value: string): void;
+  add_annotation(page: number, spec: string): void;
+  set_annotation_contents(page: number, index: number, text: string): void;
+  add_field(page: number, view: number[], spec: string): void;
+  delete_field(name: string): void;
+  set_field_props(name: string, spec: string): void;
+  protect(spec: string): void;
+  remove_protection(): void;
+  layers(): string;
+  set_layer_visible(index: number, visible: boolean): boolean;
+  add_picture_stamp(page: number, view: number[], name: string, bytes: Uint8Array): void;
+  flatten_fill_sign(): void;
+  signatures(): string;
+  sign_with_certificate(p12: Uint8Array, password: string, spec: string): Uint8Array;
   can_undo(): string | undefined | null;
   can_redo(): string | undefined | null;
   undo(): void;
@@ -46,6 +59,10 @@ export interface WasmPdf {
 
 export interface WasmModule {
   open(bytes: Uint8Array, password?: string): WasmPdf;
+  /** The stamps that can be added, as JSON. */
+  stamps(): string;
+  /** A new digital ID as a PKCS #12 file; `now` is Unix seconds. */
+  createDigitalId(name: string, organisation: string, email: string, password: string, years: number, now: number): Uint8Array;
 }
 
 export class EngineError extends Error {
@@ -175,6 +192,49 @@ export class Engine {
       case "setField":
         this.need().set_field(call.name, JSON.stringify(call.value));
         return { value: null };
+      case "addAnnotation":
+        this.need().add_annotation(call.page, JSON.stringify(call.spec));
+        return { value: null };
+      case "setAnnotationContents":
+        this.need().set_annotation_contents(call.page, Math.trunc(call.index), call.text);
+        return { value: null };
+      case "stamps":
+        return { value: JSON.parse(this.wasm.stamps()) as StampInfo[] };
+      case "addField":
+        this.need().add_field(call.page, call.view, JSON.stringify(call.spec));
+        return { value: null };
+      case "deleteField":
+        this.need().delete_field(call.name);
+        return { value: null };
+      case "setFieldProps":
+        this.need().set_field_props(call.name, JSON.stringify(call.change));
+        return { value: null };
+      case "protect":
+        this.need().protect(JSON.stringify(call.spec));
+        return { value: null };
+      case "removeProtection":
+        this.need().remove_protection();
+        return { value: null };
+      case "layers":
+        return { value: JSON.parse(this.need().layers()) as LayerInfo[] };
+      case "setLayerVisible":
+        return { value: this.need().set_layer_visible(Math.trunc(call.index), call.visible) };
+      case "addPictureStamp":
+        this.need().add_picture_stamp(call.page, call.view, call.name, call.bytes);
+        return { value: null };
+      case "flattenFillSign":
+        this.need().flatten_fill_sign();
+        return { value: null };
+      case "signatures":
+        return { value: JSON.parse(this.need().signatures()) as SignatureInfo[] };
+      case "signWithCertificate": {
+        const bytes = this.need().sign_with_certificate(call.p12, call.password, JSON.stringify(call.spec));
+        return { value: bytes, transfer: [bytes.buffer as ArrayBuffer] };
+      }
+      case "createDigitalId": {
+        const bytes = this.wasm.createDigitalId(call.name, call.organisation, call.email, call.password, Math.trunc(call.years), call.now);
+        return { value: bytes, transfer: [bytes.buffer as ArrayBuffer] };
+      }
       case "history": {
         const pdf = this.need();
         const h: History = { undo: pdf.can_undo() ?? null, redo: pdf.can_redo() ?? null };

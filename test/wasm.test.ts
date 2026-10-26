@@ -33,7 +33,11 @@ describe.skipIf(!built)("the real engine", () => {
   async function engine(): Promise<Engine> {
     const glue = await import(/* @vite-ignore */ new URL("pdfcraft_wasm.js", dir).href);
     glue.initSync({ module: fs.readFileSync(new URL("pdfcraft_wasm_bg.wasm", dir)) });
-    const wasm: WasmModule = { open: (bytes, password) => new glue.Pdf(bytes, password) };
+    const wasm: WasmModule = {
+      open: (bytes, password) => new glue.Pdf(bytes, password),
+      stamps: () => glue.Pdf.stamps(),
+      createDigitalId: (...a: [string, string, string, string, number, number]) => glue.Pdf.create_digital_id(...a),
+    };
     return new Engine(wasm);
   }
 
@@ -111,5 +115,22 @@ describe.skipIf(!built)("the real engine", () => {
     expect(() => e.handle({ op: "addLink", page: 0, view: [10, 10, 100, 40], target: "javascript:alert(1)" })).toThrow();
     expect(e.handle({ op: "fields", page: 0 }).value).toEqual([]);
     expect(e.handle({ op: "find", query: "" }).value).toEqual([]);
+  });
+
+  it("adds a comment and a field, makes a digital ID in the browser and signs with it", async () => {
+    const e = await engine();
+    e.handle({ op: "open", bytes: fixture(1) });
+    e.handle({ op: "addAnnotation", page: 0, spec: { type: "note", at: [20, 30], contents: "Check" } });
+    e.handle({ op: "addAnnotation", page: 0, spec: { type: "stamp", box: [20, 60, 140, 90], stamp: "Approved" } });
+    e.handle({ op: "addField", page: 0, view: [20, 120, 120, 142], spec: { type: "text", name: "Name" } });
+    expect((e.handle({ op: "annotations", page: 0 }).value as unknown[]).length).toBeGreaterThanOrEqual(2);
+    expect((e.handle({ op: "stamps" }).value as { name: string }[]).some((s) => s.name === "Approved")).toBe(true);
+    const id = e.handle({ op: "createDigitalId", name: "Ada Example", organisation: "", email: "", password: "pw", years: 2, now: 1_700_000_000 }).value as Uint8Array;
+    expect(id.length).toBeGreaterThan(200);
+    const signed = e.handle({ op: "signWithCertificate", p12: id, password: "pw", spec: { page: 0, box: [20, 200, 160, 260] } }).value as Uint8Array;
+    expect(new TextDecoder().decode(signed.slice(0, 4))).toBe("%PDF");
+    const again = await engine();
+    again.handle({ op: "open", bytes: signed });
+    expect(again.handle({ op: "signatures" }).value).toMatchObject([{ signed: true, signer: "Ada Example" }]);
   });
 });

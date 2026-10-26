@@ -96,6 +96,93 @@ export interface FieldInfo {
 
 export type FieldValue = { text: string } | { check: boolean } | { choice: string[] };
 
+type Rgb = [number, number, number];
+type Point = [number, number];
+
+/** A comment to add. Boxes and points are displayed points from the page's top-left; colours are RGB from 0 to 1. */
+export type CommentSpec = (
+  | { type: "note"; at: Point }
+  | { type: "rect"; box: Box }
+  | { type: "oval"; box: Box }
+  | { type: "line"; from: Point; to: Point }
+  | { type: "arrow"; from: Point; to: Point }
+  | { type: "ink"; strokes: Point[][] }
+  | { type: "textbox"; box: Box; fontSize?: number }
+  | { type: "typewriter"; box: Box; fontSize?: number }
+  | { type: "mark"; box: Box; mark?: "check" | "cross" | "dot" | "line" }
+  | { type: "signature"; strokes: Point[][] }
+  | { type: "typedSignature"; at: Point; text: string; height?: number }
+  | { type: "stamp"; box: Box; stamp: string; by?: string }
+) & { contents?: string; author?: string; color?: Rgb; fill?: Rgb; width?: number; opacity?: number };
+
+export interface StampInfo {
+  name: string;
+  label: string;
+  group: "dynamic" | "signHere" | "business";
+  size: [number, number];
+  color: Rgb;
+}
+
+export type FieldType = "text" | "multiline" | "date" | "check" | "radio" | "combo" | "list" | "button";
+
+export interface FieldSpec {
+  type: FieldType;
+  name?: string;
+  options?: string[];
+  editable?: boolean;
+  multi?: boolean;
+  group?: string;
+  export?: string;
+  caption?: string;
+}
+
+export interface FieldChange {
+  name?: string;
+  tooltip?: string;
+  required?: boolean;
+  readOnly?: boolean;
+  options?: string[];
+  fontSize?: number;
+}
+
+export interface ProtectSpec {
+  open?: string;
+  owner?: string;
+  printing?: "none" | "low" | "high";
+  changes?: "none" | "pages" | "fill" | "comment" | "any";
+  copy?: boolean;
+  accessibility?: boolean;
+}
+
+export interface LayerInfo {
+  index: number;
+  name: string;
+  visible: boolean;
+}
+
+export interface SignatureInfo {
+  field: string;
+  signed: boolean;
+  signer: string | null;
+  date: string | null;
+  reason: string | null;
+  page: number | null;
+  summary: string;
+  status: string;
+}
+
+/** How to sign with a certificate; `box` (displayed points) makes the signature visible. */
+export interface SignSpec {
+  page?: number;
+  box?: Box;
+  field?: string;
+  name?: string;
+  reason?: string;
+  location?: string;
+  contact?: string;
+  certify?: 1 | 2 | 3;
+}
+
 export interface Rendered {
   width: number;
   height: number;
@@ -142,6 +229,21 @@ export type Call =
   | { op: "deleteAnnotation"; page: number; index: number }
   | { op: "fields"; page: number }
   | { op: "setField"; name: string; value: FieldValue }
+  | { op: "addAnnotation"; page: number; spec: CommentSpec }
+  | { op: "setAnnotationContents"; page: number; index: number; text: string }
+  | { op: "stamps" }
+  | { op: "addField"; page: number; view: Box; spec: FieldSpec }
+  | { op: "deleteField"; name: string }
+  | { op: "setFieldProps"; name: string; change: FieldChange }
+  | { op: "protect"; spec: ProtectSpec }
+  | { op: "removeProtection" }
+  | { op: "layers" }
+  | { op: "setLayerVisible"; index: number; visible: boolean }
+  | { op: "addPictureStamp"; page: number; view: Box; name: string; bytes: Uint8Array }
+  | { op: "flattenFillSign" }
+  | { op: "signatures" }
+  | { op: "signWithCertificate"; p12: Uint8Array; password: string; spec: SignSpec }
+  | { op: "createDigitalId"; name: string; organisation: string; email: string; password: string; years: number; now: number }
   | { op: "history" }
   | { op: "undo" }
   | { op: "redo" }
@@ -172,6 +274,15 @@ export type EditCall = Extract<
   | { op: "deleteLink" }
   | { op: "deleteAnnotation" }
   | { op: "setField" }
+  | { op: "addAnnotation" }
+  | { op: "setAnnotationContents" }
+  | { op: "addField" }
+  | { op: "deleteField" }
+  | { op: "setFieldProps" }
+  | { op: "protect" }
+  | { op: "removeProtection" }
+  | { op: "addPictureStamp" }
+  | { op: "flattenFillSign" }
   | { op: "undo" }
   | { op: "redo" }
 >;

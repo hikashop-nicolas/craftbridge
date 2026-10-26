@@ -23,6 +23,25 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     move_pages: (list, to) => void calls.push(`move ${[...list].join(",")} ${to}`),
     insert_blank_page: () => void (pages += 1),
     insert_pages_from: (name, bytes, at) => void calls.push(`pages_from ${name} ${bytes.length} ${at}`),
+    add_annotation: (page, spec) => void calls.push(`annotation ${page} ${spec}`),
+    set_annotation_contents: (page, index, text) => void calls.push(`contents ${page} ${index} ${text}`),
+    add_field: (page, view, spec) => void calls.push(`field ${page} ${view.join(",")} ${spec}`),
+    delete_field: (name) => void calls.push(`delete_field ${name}`),
+    set_field_props: (name, spec) => void calls.push(`field_props ${name} ${spec}`),
+    protect: (spec) => void calls.push(`protect ${spec}`),
+    remove_protection: () => void calls.push("remove_protection"),
+    layers: () => JSON.stringify([{ index: 0, name: "Notes", visible: true }]),
+    set_layer_visible: (index, visible) => {
+      calls.push(`layer ${index} ${visible}`);
+      return true;
+    },
+    add_picture_stamp: (page, view, name, bytes) => void calls.push(`picture ${page} ${view.join(",")} ${name} ${bytes.length}`),
+    flatten_fill_sign: () => void calls.push("flatten"),
+    signatures: () => JSON.stringify([{ field: "Signature1", signed: true, signer: "Ada", date: null, reason: null, page: 0, summary: "Signature is valid", status: "valid" }]),
+    sign_with_certificate: (p12, password, spec) => {
+      calls.push(`sign ${p12.length} ${password} ${spec}`);
+      return new Uint8Array([37, 80, 68, 70]);
+    },
     can_undo: () => (calls.length ? "Edit" : undefined),
     can_redo: () => null,
     undo: () => void calls.push("undo"),
@@ -57,6 +76,8 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
         if (bytes.length === 0) throw new Error("invalid: the file is not a readable PDF");
         return pdf;
       },
+      stamps: () => JSON.stringify([{ name: "Approved", label: "APPROVED", group: "business", size: [150, 40], color: [0, 0.5, 0] }]),
+      createDigitalId: (name, _org, _email, password, years, now) => new Uint8Array([name.length, password.length, years, now % 256]),
     },
   };
 }
@@ -179,6 +200,43 @@ describe("Engine", () => {
       "delete_link 2",
       "delete_annotation 1",
       'set_field n {"check":true}',
+    ]);
+  });
+
+  it("passes comments, fields, protection, layers and signing through", () => {
+    const { module, calls } = fakeModule();
+    const e = new Engine(module);
+    open(e);
+    e.handle({ op: "addAnnotation", page: 0, spec: { type: "note", at: [10, 20], contents: "Hi" } });
+    e.handle({ op: "setAnnotationContents", page: 0, index: 2.9, text: "Changed" });
+    expect(e.handle({ op: "stamps" }).value).toMatchObject([{ name: "Approved" }]);
+    e.handle({ op: "addField", page: 0, view: [1, 2, 3, 4], spec: { type: "check", name: "Agree" } });
+    e.handle({ op: "deleteField", name: "Agree" });
+    e.handle({ op: "setFieldProps", name: "Agree", change: { required: true } });
+    e.handle({ op: "protect", spec: { open: "pw", printing: "low" } });
+    e.handle({ op: "removeProtection" });
+    expect(e.handle({ op: "layers" }).value).toEqual([{ index: 0, name: "Notes", visible: true }]);
+    expect(e.handle({ op: "setLayerVisible", index: 0.4, visible: false }).value).toBe(true);
+    e.handle({ op: "addPictureStamp", page: 1, view: [1, 2, 3, 4], name: "logo.png", bytes: new Uint8Array(5) });
+    e.handle({ op: "flattenFillSign" });
+    expect(e.handle({ op: "signatures" }).value).toMatchObject([{ signer: "Ada", status: "valid" }]);
+    const signed = e.handle({ op: "signWithCertificate", p12: new Uint8Array(3), password: "pw", spec: { box: [1, 2, 3, 4], reason: "ok" } });
+    expect(signed.value).toEqual(new Uint8Array([37, 80, 68, 70]));
+    expect(signed.transfer).toHaveLength(1);
+    const id = e.handle({ op: "createDigitalId", name: "Ada", organisation: "", email: "", password: "pw", years: 2.5, now: 1000 });
+    expect(id.value).toEqual(new Uint8Array([3, 2, 2, 232]));
+    expect(calls).toEqual([
+      'annotation 0 {"type":"note","at":[10,20],"contents":"Hi"}',
+      "contents 0 2 Changed",
+      "field 0 1,2,3,4 {\"type\":\"check\",\"name\":\"Agree\"}",
+      "delete_field Agree",
+      'field_props Agree {"required":true}',
+      'protect {"open":"pw","printing":"low"}',
+      "remove_protection",
+      "layer 0 false",
+      "picture 1 1,2,3,4 logo.png 5",
+      "flatten",
+      'sign 3 pw {"box":[1,2,3,4],"reason":"ok"}',
     ]);
   });
 });

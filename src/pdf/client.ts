@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { AnnotationInfo, Box, Call, EditCall, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, Reply, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { AnnotationInfo, Box, EditCall, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, TextBlock, TextSelection, TextStyle, Tile };
+export type { AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -191,6 +191,75 @@ export class PdfDocument {
   async insertPagesFrom(name: string, bytes: Uint8Array, at: number): Promise<void> {
     await this.call({ op: "insertPagesFrom", name, bytes, at });
     await this.refresh();
+  }
+
+  /** Adds a comment: a note, shape, arrow, pen drawing, text box, stamp, or the marks of Fill and Sign. */
+  async addAnnotation(page: number, spec: CommentSpec): Promise<void> {
+    await this.call({ op: "addAnnotation", page, spec });
+  }
+
+  async setAnnotationContents(page: number, index: number, text: string): Promise<void> {
+    await this.call({ op: "setAnnotationContents", page, index, text });
+  }
+
+  /** The stamps that can be added with `addAnnotation({ type: "stamp", stamp: name })`. */
+  stamps(): Promise<StampInfo[]> {
+    return this.call({ op: "stamps" });
+  }
+
+  /** Adds a form field over a displayed box. */
+  async addField(page: number, view: Box, spec: FieldSpec): Promise<void> {
+    await this.call({ op: "addField", page, view, spec });
+  }
+
+  async deleteField(name: string): Promise<void> {
+    await this.call({ op: "deleteField", name });
+  }
+
+  async setFieldProps(name: string, change: FieldChange): Promise<void> {
+    await this.call({ op: "setFieldProps", name, change });
+  }
+
+  /** Protects with passwords and permissions; the next save is encrypted. */
+  async protect(spec: ProtectSpec): Promise<void> {
+    await this.call({ op: "protect", spec });
+  }
+
+  async removeProtection(): Promise<void> {
+    await this.call({ op: "removeProtection" });
+  }
+
+  layers(): Promise<LayerInfo[]> {
+    return this.call({ op: "layers" });
+  }
+
+  /** Shows or hides a layer for viewing (the file keeps its own choice); true when that changed the picture. */
+  setLayerVisible(index: number, visible: boolean): Promise<boolean> {
+    return this.call({ op: "setLayerVisible", index, visible });
+  }
+
+  /** Puts a picture on the page as a stamp (an image file: PNG, JPEG, TIFF, GIF, BMP). */
+  async addPictureStamp(page: number, view: Box, name: string, bytes: Uint8Array): Promise<void> {
+    await this.call({ op: "addPictureStamp", page, view, name, bytes });
+  }
+
+  /** Bakes typed text, marks and signatures into the page. */
+  async flattenFillSign(): Promise<void> {
+    await this.call({ op: "flattenFillSign" });
+  }
+
+  signatures(): Promise<SignatureInfo[]> {
+    return this.call({ op: "signatures" });
+  }
+
+  /** Signs with a certificate file (PKCS #12) and returns the signed PDF. The document is final once signed. */
+  signWithCertificate(p12: Uint8Array, password: string, spec: SignSpec = {}): Promise<Uint8Array> {
+    return this.call({ op: "signWithCertificate", p12, password, spec });
+  }
+
+  /** Makes a new digital ID (a self-signed certificate) as a PKCS #12 file protected by `password`. */
+  createDigitalId(name: string, organisation: string, email: string, password: string, years = 5): Promise<Uint8Array> {
+    return this.call({ op: "createDigitalId", name, organisation, email, password, years, now: Math.floor(Date.now() / 1000) });
   }
 
   async insertBlankPage(at: number, width: number, height: number): Promise<void> {

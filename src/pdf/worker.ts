@@ -17,6 +17,8 @@ let ready: Promise<unknown> | null = null;
 const wasm: WasmModule = {
   // The generated class is the slice WasmPdf describes; its typings differ only in spelling.
   open: (bytes, password) => new Pdf(bytes, password ?? undefined) as unknown as WasmPdf,
+  stamps: () => Pdf.stamps() as string,
+  createDigitalId: (name, organisation, email, password, years, now) => Pdf.create_digital_id(name, organisation, email, password, years, now) as Uint8Array,
 };
 
 scope.onmessage = async (e) => {
