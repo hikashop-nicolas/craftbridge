@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { Call, DocumentInfo, History, Rendered, Reply, TextBlock, Tile } from "./protocol";
+import type { Box, Call, DocumentInfo, History, ObjectRef, PageObject, Rendered, Reply, TextBlock, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { DocumentInfo, History, Rendered, TextBlock, Tile };
+export type { Box, DocumentInfo, History, ObjectRef, PageObject, Rendered, TextBlock, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -72,6 +72,45 @@ export class PdfDocument {
   /** Rewrites a text block; the page is read again afterwards, so block indices may shift. */
   async editTextBlock(page: number, block: number, text: string): Promise<void> {
     await this.call({ op: "editTextBlock", page, block, text });
+  }
+
+  /** Everything on the page that can be moved, resized, restyled or deleted. */
+  objects(page: number): Promise<PageObject[]> {
+    return this.call({ op: "objects", page });
+  }
+
+  /** Moves objects by (dx, dy) displayed points: existing text, images and added items together. */
+  async moveObjects(page: number, targets: ObjectRef[], dx: number, dy: number): Promise<void> {
+    await this.call({ op: "moveObjects", page, targets, dx, dy });
+  }
+
+  /** Gives an object a box. An added item or an image takes it; existing text rewraps to its width. */
+  async resizeObject(page: number, target: ObjectRef, view: Box): Promise<void> {
+    await this.call({ op: "resizeObject", page, target, view });
+  }
+
+  /** Adds a text box over `view` (its width wraps the text; the height follows it). */
+  async addText(page: number, view: Box, text: string, style: TextStyle = {}): Promise<void> {
+    await this.call({ op: "addText", page, view, text, style });
+  }
+
+  /** Adds a picture (PNG, JPEG, TIFF, GIF, BMP) over `view`, or at its natural size in the middle. */
+  async addImage(page: number, name: string, bytes: Uint8Array, view?: Box): Promise<void> {
+    await this.call({ op: "addImage", page, name, bytes, view });
+  }
+
+  async deleteObject(page: number, target: ObjectRef): Promise<void> {
+    await this.call({ op: "deleteObject", page, target });
+  }
+
+  /** Rewrites an object's text and/or restyles it; leave `text` out to keep the words. */
+  async setText(page: number, target: ObjectRef, text?: string, style: TextStyle = {}): Promise<void> {
+    await this.call({ op: "setText", page, target, text, style });
+  }
+
+  /** Paints a white box over `view` (the covered content stays in the file). */
+  async cover(page: number, view: Box): Promise<void> {
+    await this.call({ op: "cover", page, view });
   }
 
   async deletePages(pages: number[]): Promise<void> {

@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { Call, DocumentInfo, History, Rendered, TextBlock } from "./protocol";
+import type { Call, DocumentInfo, History, PageObject, Rendered, TextBlock } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -15,6 +15,14 @@ export interface WasmPdf {
   rotate_pages(pages: Uint32Array | number[], degrees: number): void;
   move_pages(pages: Uint32Array | number[], to: number): void;
   insert_blank_page(at: number, width: number, height: number): void;
+  objects(page: number): string;
+  move_objects(page: number, targets: string, dx: number, dy: number): void;
+  resize_object(page: number, kind: string, index: number, view: number[]): void;
+  add_text(page: number, view: number[], text: string, style: string): void;
+  add_image(page: number, name: string, bytes: Uint8Array, view?: number[]): void;
+  delete_object(page: number, kind: string, index: number): void;
+  set_text(page: number, kind: string, index: number, text: string | undefined, style: string): void;
+  cover(page: number, view: number[]): void;
   can_undo(): string | undefined | null;
   can_redo(): string | undefined | null;
   undo(): void;
@@ -100,6 +108,29 @@ export class Engine {
         return { value: null };
       case "insertBlankPage":
         this.need().insert_blank_page(Math.trunc(call.at), call.width, call.height);
+        return { value: null };
+      case "objects":
+        return { value: JSON.parse(this.need().objects(call.page)) as PageObject[] };
+      case "moveObjects":
+        this.need().move_objects(call.page, JSON.stringify(call.targets), call.dx, call.dy);
+        return { value: null };
+      case "resizeObject":
+        this.need().resize_object(call.page, call.target.kind, Math.trunc(call.target.index), call.view);
+        return { value: null };
+      case "addText":
+        this.need().add_text(call.page, call.view, call.text, JSON.stringify(call.style ?? {}));
+        return { value: null };
+      case "addImage":
+        this.need().add_image(call.page, call.name, call.bytes, call.view);
+        return { value: null };
+      case "deleteObject":
+        this.need().delete_object(call.page, call.target.kind, Math.trunc(call.target.index));
+        return { value: null };
+      case "setText":
+        this.need().set_text(call.page, call.target.kind, Math.trunc(call.target.index), call.text, JSON.stringify(call.style ?? {}));
+        return { value: null };
+      case "cover":
+        this.need().cover(call.page, call.view);
         return { value: null };
       case "history": {
         const pdf = this.need();

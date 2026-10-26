@@ -71,4 +71,27 @@ describe.skipIf(!built)("the real engine", () => {
     e.handle({ op: "rotatePages", pages: [0], degrees: 90 });
     expect(e.handle({ op: "pageSize", page: 0 }).value).toEqual([300, 200]);
   });
+
+  it("lists, adds, moves, restyles and deletes page objects", async () => {
+    const e = await engine();
+    e.handle({ op: "open", bytes: fixture(1) });
+    const first = e.handle({ op: "objects", page: 0 }).value as { kind: string; index: number; text: string; view: number[] }[];
+    expect(first).toMatchObject([{ kind: "text", index: 0, text: "Page 1" }]);
+
+    e.handle({ op: "addText", page: 0, view: [20, 40, 180, 80], text: "Added words", style: { size: 18, bold: true, color: [0.8, 0, 0], align: "center" } });
+    const added = (e.handle({ op: "objects", page: 0 }).value as { kind: string; index: number; text: string }[]).find((o) => o.kind === "added");
+    expect(added).toMatchObject({ index: 0, text: "Added words" });
+
+    e.handle({ op: "setText", page: 0, target: { kind: "added", index: 0 }, text: "Changed", style: { italic: true } });
+    e.handle({ op: "moveObjects", page: 0, targets: [{ kind: "text", index: 0 }, { kind: "added", index: 0 }], dx: 5, dy: 10 });
+    const moved = e.handle({ op: "objects", page: 0 }).value as { kind: string; text: string; view: number[] }[];
+    expect(moved.find((o) => o.kind === "added")).toMatchObject({ text: "Changed" });
+    expect(moved.find((o) => o.kind === "text")!.view[1]).toBeGreaterThan(first[0]!.view[1]!);
+
+    e.handle({ op: "resizeObject", page: 0, target: { kind: "added", index: 0 }, view: [20, 40, 120, 90] });
+    e.handle({ op: "cover", page: 0, view: [0, 0, 50, 50] });
+    e.handle({ op: "deleteObject", page: 0, target: { kind: "added", index: 0 } });
+    expect((e.handle({ op: "objects", page: 0 }).value as { kind: string }[]).some((o) => o.kind === "added")).toBe(false);
+    expect(() => e.handle({ op: "moveObjects", page: 0, targets: [{ kind: "added", index: 3 }], dx: 1, dy: 1 })).toThrow();
+  });
 });

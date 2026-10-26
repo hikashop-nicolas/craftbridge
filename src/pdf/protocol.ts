@@ -22,6 +22,37 @@ export interface TextBlock {
   invisible: boolean;
 }
 
+/** Where an object comes from: text or an image the page already had, or something added. */
+export type ObjectKind = "text" | "image" | "added";
+
+export type Box = [x0: number, y0: number, x1: number, y1: number];
+
+/** What a page shows that can be moved, resized, restyled or deleted. */
+export interface PageObject {
+  kind: ObjectKind;
+  index: number;
+  type: "text" | "image" | "form";
+  text: string | null;
+  /** Where it is drawn: points from the page's top-left, y down. */
+  view: Box;
+}
+
+export interface TextStyle {
+  family?: "helvetica" | "times" | "courier";
+  bold?: boolean;
+  italic?: boolean;
+  /** Points, 1 to 400. */
+  size?: number;
+  /** RGB, each 0 to 1. */
+  color?: [number, number, number];
+  align?: "left" | "center" | "right" | "justify";
+}
+
+export interface ObjectRef {
+  kind: ObjectKind;
+  index: number;
+}
+
 export interface Rendered {
   width: number;
   height: number;
@@ -48,6 +79,14 @@ export type Call =
   | { op: "rotatePages"; pages: number[]; degrees: number }
   | { op: "movePages"; pages: number[]; to: number }
   | { op: "insertBlankPage"; at: number; width: number; height: number }
+  | { op: "objects"; page: number }
+  | { op: "moveObjects"; page: number; targets: ObjectRef[]; dx: number; dy: number }
+  | { op: "resizeObject"; page: number; target: ObjectRef; view: Box }
+  | { op: "addText"; page: number; view: Box; text: string; style?: TextStyle }
+  | { op: "addImage"; page: number; name: string; bytes: Uint8Array; view?: Box }
+  | { op: "deleteObject"; page: number; target: ObjectRef }
+  | { op: "setText"; page: number; target: ObjectRef; text?: string; style?: TextStyle }
+  | { op: "cover"; page: number; view: Box }
   | { op: "history" }
   | { op: "undo" }
   | { op: "redo" }
