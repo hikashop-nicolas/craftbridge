@@ -145,6 +145,9 @@ describe.skipIf(!built)("the real engine", () => {
     e.handle({ op: "setFieldActions", name: "Go", actions: [{ trigger: "mouse_up", kind: "javascript", script }] });
     const [action] = e.handle({ op: "fieldActions", name: "Go" }).value as { trigger: string; kind: string; script: string }[];
     expect(action).toMatchObject({ trigger: "mouse_up", kind: "javascript" });
+    e.handle({ op: "setFieldProps", name: "Go", change: { caption: "Compute" } });
+    const goButton = (e.handle({ op: "fields", page: 0 }).value as { name: string; caption?: string }[]).find((f) => f.name === "Go");
+    expect(goButton?.caption).toBe("Compute");
     const out = e.handle({ op: "runAction", action: { kind: "javascript", script: action.script }, target: "Go" }).value;
     expect(out).toMatchObject({ alerts: ["done"], requests: [{ type: "print" }] });
     const total = (e.handle({ op: "fields", page: 0 }).value as { name: string; value: string }[]).find((f) => f.name === "Total");

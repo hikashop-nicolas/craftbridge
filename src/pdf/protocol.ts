@@ -100,6 +100,8 @@ export interface FieldInfo {
   /** A choice: a drop-down (true) or a list box, and its choices as [value, label]. */
   combo?: boolean;
   options?: [string, string][];
+  /** A push button's label. */
+  caption?: string | null;
 }
 
 export type FieldValue = { text: string } | { check: boolean } | { radio: string | null } | { choice: string[] };
@@ -151,7 +153,9 @@ export interface FieldChange {
   readOnly?: boolean;
   options?: string[];
   fontSize?: number;
-  /** Which widget `box` moves (default the first). */
+  /** A push button's label. */
+  caption?: string;
+  /** Which widget `box` and `caption` apply to (default the first). */
   widget?: number;
   /** Moves and resizes the field: displayed points from the page's top-left. */
   box?: Box;
