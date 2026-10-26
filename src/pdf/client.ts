@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { AnnotationInfo, Box, Call, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, Reply, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { AnnotationInfo, Box, Call, EditCall, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, Reply, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { AnnotationInfo, Box, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, TextBlock, TextSelection, TextStyle, Tile };
+export type { AnnotationInfo, Box, EditCall, DocumentInfo, FieldInfo, FieldValue, FindMatch, History, LinkInfo, MarkupKind, ObjectRef, PageObject, Rendered, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -72,6 +72,15 @@ export class PdfDocument {
   /** Rewrites a text block; the page is read again afterwards, so block indices may shift. */
   async editTextBlock(page: number, block: number, text: string): Promise<void> {
     await this.call({ op: "editTextBlock", page, block, text });
+  }
+
+  /**
+   * Runs any editing call from its description, the way the methods above do. A session records
+   * these descriptions and replays them on every peer's copy, so they all reach the same document.
+   */
+  async execute(call: EditCall): Promise<void> {
+    await this.call(call);
+    if (["deletePages", "insertBlankPage", "undo", "redo"].includes(call.op)) await this.refresh();
   }
 
   /** Everything on the page that can be moved, resized, restyled or deleted. */
@@ -198,7 +207,8 @@ export class PdfDocument {
     return this.call({ op: "save", full });
   }
 
-  private async refresh(): Promise<void> {
+  /** Reads the page count again after a call that can change it. */
+  async refresh(): Promise<void> {
     this.current = await this.call<DocumentInfo>({ op: "info" });
   }
 

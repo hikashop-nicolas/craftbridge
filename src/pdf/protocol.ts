@@ -148,6 +148,30 @@ export type Call =
 
 export type Request = Call & { id: number };
 
+/** The calls that change the document: the ones a session records and replays, in order. */
+export type EditCall = Extract<
+  Call,
+  | { op: "editTextBlock" }
+  | { op: "deletePages" }
+  | { op: "rotatePages" }
+  | { op: "movePages" }
+  | { op: "insertBlankPage" }
+  | { op: "moveObjects" }
+  | { op: "resizeObject" }
+  | { op: "addText" }
+  | { op: "addImage" }
+  | { op: "deleteObject" }
+  | { op: "setText" }
+  | { op: "cover" }
+  | { op: "markup" }
+  | { op: "addLink" }
+  | { op: "deleteLink" }
+  | { op: "deleteAnnotation" }
+  | { op: "setField" }
+  | { op: "undo" }
+  | { op: "redo" }
+>;
+
 export interface History {
   /** The label of the edit undo would take back, or null. */
   undo: string | null;
