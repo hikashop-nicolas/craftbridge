@@ -8,7 +8,7 @@ export interface WasmPdf {
   page_count(): number;
   page_size(page: number): Float32Array | number[];
   is_encrypted(): boolean;
-  render(page: number, scale: number, tile?: Uint32Array | number[]): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  render(page: number, scale: number, tile?: Uint32Array | number[]): { width: number; height: number; warnings?: string[]; take_rgba(): Uint8Array; free?(): void };
   text_blocks(page: number): string;
   edit_text_block(page: number, block: number, text: string): void;
   delete_pages(pages: Uint32Array | number[]): void;
@@ -80,7 +80,7 @@ export class Engine {
       case "render": {
         const r = this.need().render(call.page, call.scale, call.tile);
         const rgba = r.take_rgba();
-        const out: Rendered = { width: r.width, height: r.height, rgba };
+        const out: Rendered = { width: r.width, height: r.height, rgba, warnings: r.warnings ?? [] };
         r.free?.();
         return { value: out, transfer: [rgba.buffer as ArrayBuffer] };
       }

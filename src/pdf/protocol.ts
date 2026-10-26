@@ -27,6 +27,8 @@ export interface Rendered {
   height: number;
   /** Premultiplied RGBA8, row by row. */
   rgba: Uint8Array;
+  /** Why the picture is partial or approximate: "content-truncated", "colour-fallback". */
+  warnings: string[];
 }
 
 export interface DocumentInfo {
