@@ -39,6 +39,7 @@ export interface WasmPdf {
   set_annotation_contents(page: number, index: number, text: string): void;
   add_field(page: number, view: number[], spec: string): void;
   delete_field(name: string): void;
+  delete_field_widget(name: string, widget: number): void;
   set_field_props(name: string, spec: string): void;
   protect(spec: string): void;
   remove_protection(): void;
@@ -202,6 +203,9 @@ export class Engine {
         return { value: JSON.parse(this.wasm.stamps()) as StampInfo[] };
       case "addField":
         this.need().add_field(call.page, call.view, JSON.stringify(call.spec));
+        return { value: null };
+      case "deleteFieldWidget":
+        this.need().delete_field_widget(call.name, Math.trunc(call.widget));
         return { value: null };
       case "deleteField":
         this.need().delete_field(call.name);

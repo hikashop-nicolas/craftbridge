@@ -216,6 +216,10 @@ export class PdfDocument {
     await this.call({ op: "deleteField", name });
   }
 
+  async deleteFieldWidget(name: string, widget: number): Promise<void> {
+    await this.call({ op: "deleteFieldWidget", name, widget });
+  }
+
   async setFieldProps(name: string, change: FieldChange): Promise<void> {
     await this.call({ op: "setFieldProps", name, change });
   }
