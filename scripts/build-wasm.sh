@@ -14,10 +14,14 @@ git -C "$src" fetch --quiet origin
 git -C "$src" checkout --quiet --detach "$rev"
 
 want=$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/[^0-9.]/, "", $0); print; exit }' "$src/Cargo.lock")
-have=$(wasm-bindgen --version | awk '{print $2}')
+have=$(wasm-bindgen --version 2>/dev/null | awk '{print $2}' || true)
 if [ "$want" != "$have" ]; then
-  echo "wasm-bindgen-cli $have does not match the engine's $want (cargo install wasm-bindgen-cli --version $want --locked)" >&2
-  exit 1
+  if [ "${INSTALL_WASM_BINDGEN:-}" = 1 ]; then
+    cargo install wasm-bindgen-cli --version "$want" --locked --force
+  else
+    echo "wasm-bindgen-cli $have does not match the engine's $want (cargo install wasm-bindgen-cli --version $want --locked, or set INSTALL_WASM_BINDGEN=1)" >&2
+    exit 1
+  fi
 fi
 
 # The fonts the engine draws added text and page marks with: craft-fonts at its pinned commit (the Japanese
