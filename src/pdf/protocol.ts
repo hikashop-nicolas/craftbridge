@@ -8,6 +8,8 @@ export interface TextBlock {
   index: number;
   /** [x0, y0, x1, y1] in PDF user space. */
   rect: [number, number, number, number];
+  /** The same box as displayed: points from the top-left of the page, y down, after rotation. */
+  view: [number, number, number, number] | null;
   text: string;
   font: string;
   size: number;

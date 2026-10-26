@@ -45,6 +45,9 @@ describe.skipIf(!built)("the real engine", () => {
     expect([page.width, page.height]).toEqual([200, 300]);
     expect(page.rgba.length).toBe(200 * 300 * 4);
     expect(e.handle({ op: "textBlocks", page: 0 }).value).toMatchObject([{ text: "Page 1" }]);
+    const [block] = e.handle({ op: "textBlocks", page: 0 }).value as { view: number[] }[];
+    expect(block!.view[2]).toBeLessThanOrEqual(200);
+    expect(block!.view[0]).toBeLessThan(block!.view[2]!);
     e.handle({ op: "editTextBlock", page: 0, block: 0, text: "Edited" });
     expect(e.handle({ op: "textBlocks", page: 0 }).value).toMatchObject([{ text: "Edited" }]);
     const saved = e.handle({ op: "save" }).value as Uint8Array;

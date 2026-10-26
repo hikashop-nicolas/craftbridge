@@ -13,7 +13,7 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
       calls.push(`render ${p} ${scale} ${tile ? [...tile].join(",") : "-"}`);
       return { width: 2, height: 1, take_rgba: () => new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]) };
     },
-    text_blocks: () => JSON.stringify([{ index: 0, rect: [0, 0, 1, 1], text: "Hi", font: "F", size: 12, bold: false, italic: false, color: [0, 0, 0], rotation: 0, invisible: false }]),
+    text_blocks: () => JSON.stringify([{ index: 0, rect: [0, 0, 1, 1], view: [0, 0, 1, 1], text: "Hi", font: "F", size: 12, bold: false, italic: false, color: [0, 0, 0], rotation: 0, invisible: false }]),
     edit_text_block: (p, b, t) => void calls.push(`edit ${p} ${b} ${t}`),
     delete_pages: (list) => {
       calls.push(`delete ${[...list].join(",")}`);
