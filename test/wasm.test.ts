@@ -30,15 +30,18 @@ function fixture(n: number): Uint8Array {
 }
 
 describe.skipIf(!built)("the real engine", () => {
-  async function engine(): Promise<Engine> {
+  async function module(): Promise<WasmModule> {
     const glue = await import(/* @vite-ignore */ new URL("pdfcraft_wasm.js", dir).href);
     glue.initSync({ module: fs.readFileSync(new URL("pdfcraft_wasm_bg.wasm", dir)) });
-    const wasm: WasmModule = {
+    return {
       open: (bytes, password) => new glue.Pdf(bytes, password),
       stamps: () => glue.Pdf.stamps(),
       createDigitalId: (...a: [string, string, string, string, number, number]) => glue.Pdf.create_digital_id(...a),
     };
-    return new Engine(wasm);
+  }
+
+  async function engine(): Promise<Engine> {
+    return new Engine(await module());
   }
 
   it("opens, renders, edits, saves and reopens", async () => {
@@ -184,6 +187,40 @@ describe.skipIf(!built)("the real engine", () => {
     expect(new TextDecoder().decode(e.handle({ op: "attachmentBytes", index: 0 }).value as Uint8Array)).toBe("hello");
     e.handle({ op: "deleteAttachment", key: files[0]!.key });
     expect(e.handle({ op: "attachments" }).value).toEqual([]);
+  });
+
+  it("adds and edits text in every language Omnitext speaks", async () => {
+    const attempt = (call: Parameters<Engine["handle"]>[0]): string | null => {
+      const e = new Engine(wasm);
+      e.handle({ op: "open", bytes: fixture(1) });
+      try {
+        e.handle(call);
+        return null;
+      } catch (err) {
+        return (err as Error).message;
+      }
+    };
+    const wasm = await module();
+    const cases: [string, string][] = [["fr", "Éléphant à l'été"], ["de", "Größe Übung"], ["es", "¿Cómo está? Ñandú"], ["pt", "Ação não é são"], ["ru", "Привет, мир"]];
+    for (const [lang, text] of cases) {
+      for (const call of [
+        { op: "addText", page: 0, view: [10, 100, 190, 130], text },
+        { op: "editTextBlock", page: 0, block: 0, text },
+        { op: "addWatermark", spec: { text } },
+        { op: "addHeaderFooter", spec: { text: [text, "", "", "", "", ""] } },
+      ] as const) expect(attempt(call), `${lang} ${call.op}`).toBeNull();
+    }
+    // Japanese and Chinese need the fonts the release build carries; a plain build says so
+    for (const [lang, text] of [["ja", "こんにちは世界"], ["zh", "们这说对时发国为学习，欢迎使用"]] as const) {
+      const results = [
+        attempt({ op: "addText", page: 0, view: [10, 100, 190, 130], text }),
+        attempt({ op: "editTextBlock", page: 0, block: 0, text }),
+        attempt({ op: "addWatermark", spec: { text } }),
+        attempt({ op: "addHeaderFooter", spec: { text: [text, "", "", "", "", ""] } }),
+      ];
+      if (results[0] === null) expect(results, lang).toEqual([null, null, null, null]);
+      else expect(results[0], lang).toContain("standard fonts");
+    }
   });
 
   it("signs with an RSA certificate in the browser build", async () => {

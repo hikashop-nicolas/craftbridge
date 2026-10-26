@@ -23,6 +23,19 @@ Status: early. The API will change until Omnitext ships on it.
   engine's Cargo.lock, and (optionally) `wasm-opt`.
 - `src/pdf/` is the TypeScript side: a worker that owns the wasm module and a small promise API.
 
+## Fonts
+
+The engine draws added text, headers, footers, watermarks and edited text in Cyrillic, Greek, Japanese and
+Chinese from fonts built into the wasm, as vector glyphs (no font file ends up in the PDF):
+
+- Latin, Greek and Cyrillic: Inter, bundled with the engine.
+- Japanese: BIZ UDPGothic from [craft-fonts](https://github.com/storytold/craft-fonts), pinned in `craft-fonts.rev`.
+- Simplified Chinese: `fonts/omnitext-hans/`, a 1.5 MB subset of Noto Sans CJK SC (GB 2312: 6763 hanzi and
+  682 symbols), made by `scripts/make-hans-subset.py`. SIL OFL 1.1, renamed as the licence asks.
+- Arabic, Hebrew, Thai and Devanagari come from craft-fonts too.
+
+`npm run build:wasm` assembles these into the engine's font input. Korean and the other scripts have no face yet.
+
 ## Use
 
 ```ts

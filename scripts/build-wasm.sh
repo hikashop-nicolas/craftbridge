@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds the PDF engine to wasm from the exact fork commit in pdfcraft.rev and writes wasm/pdf/.
-# Needs: git, a Rust toolchain with the wasm32-unknown-unknown target, wasm-bindgen-cli at the
+# Needs: git, sha256sum or shasum, a Rust toolchain with the wasm32-unknown-unknown target, wasm-bindgen-cli at the
 # version in the engine's Cargo.lock, and (optionally) wasm-opt from binaryen.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,11 +20,30 @@ if [ "$want" != "$have" ]; then
   exit 1
 fi
 
-(cd "$src" && cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked)
+# The fonts the engine draws added text and page marks with: craft-fonts at its pinned commit (the Japanese
+# face, and the Arabic, Hebrew, Thai and Devanagari faces the web build keeps), plus our Simplified Chinese
+# subset, which the engine's build script embeds because it is small.
+fonts_rev=$(tr -d '[:space:]' < "$here/craft-fonts.rev")
+fonts_src="${CRAFT_FONTS_SRC:-$here/vendor/craft-fonts}"
+if [ ! -d "$fonts_src/.git" ]; then
+  git clone --quiet https://github.com/storytold/craft-fonts.git "$fonts_src"
+fi
+git -C "$fonts_src" fetch --quiet origin
+git -C "$fonts_src" checkout --quiet --detach "$fonts_rev"
+input="$here/vendor/fonts-input"
+rm -rf "$input"
+mkdir -p "$input"
+cp -R "$fonts_src/fonts" "$input/fonts"
+mkdir -p "$input/fonts/omnitext-hans"
+cp "$here"/fonts/omnitext-hans/* "$input/fonts/omnitext-hans/"
+hans_sha=$( (sha256sum "$input/fonts/omnitext-hans/OmnitextHans-Regular.otf" 2>/dev/null || shasum -a 256 "$input/fonts/omnitext-hans/OmnitextHans-Regular.otf") | cut -d' ' -f1)
+printf 'Omnitext Hans | Regular | fonts/omnitext-hans/OmnitextHans-Regular.otf | Hans | OFL-1.1 | fonts/omnitext-hans/OFL.txt | %s | subset of Noto Sans CJK SC (scripts/make-hans-subset.py)\n' "$hans_sha" >> "$input/fonts/manifest.txt"
+
+(cd "$src" && CRAFT_FONTS_DIR="$input" cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked)
 out="$here/wasm/pdf"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name pdfcraft_wasm \
-  "$src/target/wasm32-unknown-unknown/release/pdfcraft_wasm.wasm"
+  "${CARGO_TARGET_DIR:-$src/target}/wasm32-unknown-unknown/release/pdfcraft_wasm.wasm"
 if command -v wasm-opt >/dev/null 2>&1; then
   wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
     "$out/pdfcraft_wasm_bg.wasm" -o "$out/pdfcraft_wasm_bg.wasm"
