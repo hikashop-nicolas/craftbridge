@@ -134,6 +134,23 @@ describe.skipIf(!built)("the real engine", () => {
     expect(again.handle({ op: "signatures" }).value).toMatchObject([{ signed: true, signer: "Ada Example" }]);
   });
 
+  it("runs a button's JavaScript in the browser build", async () => {
+    const e = await engine();
+    e.handle({ op: "open", bytes: fixture(1) });
+    e.handle({ op: "addField", page: 0, view: [20, 20, 120, 42], spec: { type: "text", name: "Qty" } });
+    e.handle({ op: "addField", page: 0, view: [20, 60, 120, 82], spec: { type: "text", name: "Total" } });
+    e.handle({ op: "addField", page: 0, view: [20, 100, 120, 122], spec: { type: "button", name: "Go", caption: "Go" } });
+    e.handle({ op: "setField", name: "Qty", value: { text: "4" } });
+    const script = "this.getField('Total').value = Number(this.getField('Qty').value) * 5; app.alert('done'); this.print();";
+    e.handle({ op: "setFieldActions", name: "Go", actions: [{ trigger: "mouse_up", kind: "javascript", script }] });
+    const [action] = e.handle({ op: "fieldActions", name: "Go" }).value as { trigger: string; kind: string; script: string }[];
+    expect(action).toMatchObject({ trigger: "mouse_up", kind: "javascript" });
+    const out = e.handle({ op: "runAction", action: { kind: "javascript", script: action.script }, target: "Go" }).value;
+    expect(out).toMatchObject({ alerts: ["done"], requests: [{ type: "print" }] });
+    const total = (e.handle({ op: "fields", page: 0 }).value as { name: string; value: string }[]).find((f) => f.name === "Total");
+    expect(total?.value).toBe("20");
+  });
+
   it("signs with an RSA certificate in the browser build", async () => {
     const p12 = process.env.RSA_P12;
     if (!p12) return;

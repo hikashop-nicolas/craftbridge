@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, History, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
+import type { AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -41,6 +41,10 @@ export interface WasmPdf {
   delete_field(name: string): void;
   delete_field_widget(name: string, widget: number): void;
   set_field_props(name: string, spec: string): void;
+  field_actions(name: string): string;
+  set_field_actions(name: string, actions: string): void;
+  run_action(action: string, target?: string): string;
+  take_js_output(): string;
   protect(spec: string): void;
   remove_protection(): void;
   layers(): string;
@@ -213,6 +217,15 @@ export class Engine {
       case "setFieldProps":
         this.need().set_field_props(call.name, JSON.stringify(call.change));
         return { value: null };
+      case "fieldActions":
+        return { value: JSON.parse(this.need().field_actions(call.name)) as FieldActionInfo[] };
+      case "setFieldActions":
+        this.need().set_field_actions(call.name, JSON.stringify(call.actions));
+        return { value: null };
+      case "runAction":
+        return { value: JSON.parse(this.need().run_action(JSON.stringify(call.action), call.target)) as JsOutput };
+      case "takeJsOutput":
+        return { value: JSON.parse(this.need().take_js_output()) as JsOutput };
       case "protect":
         this.need().protect(JSON.stringify(call.spec));
         return { value: null };

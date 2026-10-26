@@ -166,6 +166,44 @@ export interface ProtectSpec {
   accessibility?: boolean;
 }
 
+export type ActionTrigger = "mouse_up" | "mouse_down" | "mouse_enter" | "mouse_exit" | "on_focus" | "on_blur";
+
+/** What a field does for a trigger. `page` of goto is 0-based; `other` is an action kept as it is (it cannot be run). */
+export type FieldAction =
+  | { kind: "javascript"; script: string }
+  | { kind: "uri"; url: string }
+  | { kind: "reset"; fields: string[] }
+  | { kind: "named"; name: string }
+  | { kind: "goto"; page: number }
+  | { kind: "showhide"; fields: string[]; hide: boolean }
+  | { kind: "submit"; url: string }
+  | { kind: "other"; text: string };
+
+export type FieldActionInfo = FieldAction & { trigger: ActionTrigger };
+
+/** What a script asks the page to do. */
+export type JsRequest =
+  | { type: "print" }
+  | { type: "goto"; page: number }
+  | { type: "url"; url: string }
+  | { type: "submit"; url: string }
+  | { type: "named"; name: string }
+  | { type: "reset"; fields: string[] }
+  | { type: "focus"; field: string }
+  | { type: "beep" }
+  | { type: "saveAs" }
+  | { type: "panel"; panel: string };
+
+/** What scripts printed or asked for: alerts to show, console lines, requests for the page, and their errors. */
+export interface JsOutput {
+  alerts: string[];
+  console: string[];
+  requests: JsRequest[];
+  errors: string[];
+  /** The script's last value (what a console prints), after running one. */
+  result?: string | null;
+}
+
 export interface LayerInfo {
   index: number;
   name: string;
@@ -248,6 +286,10 @@ export type Call =
   | { op: "deleteField"; name: string }
   | { op: "deleteFieldWidget"; name: string; widget: number }
   | { op: "setFieldProps"; name: string; change: FieldChange }
+  | { op: "fieldActions"; name: string }
+  | { op: "setFieldActions"; name: string; actions: FieldActionInfo[] }
+  | { op: "runAction"; action: FieldAction; target?: string }
+  | { op: "takeJsOutput" }
   | { op: "protect"; spec: ProtectSpec }
   | { op: "removeProtection" }
   | { op: "layers" }
@@ -293,6 +335,8 @@ export type EditCall = Extract<
   | { op: "deleteField" }
   | { op: "deleteFieldWidget" }
   | { op: "setFieldProps" }
+  | { op: "setFieldActions" }
+  | { op: "runAction" }
   | { op: "protect" }
   | { op: "removeProtection" }
   | { op: "addPictureStamp" }

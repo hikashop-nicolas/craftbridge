@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
+export type { ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -222,6 +222,26 @@ export class PdfDocument {
 
   async setFieldProps(name: string, change: FieldChange): Promise<void> {
     await this.call({ op: "setFieldProps", name, change });
+  }
+
+  /** What a field does for each trigger (a button's click, a pointer entering it, and so on). */
+  fieldActions(name: string): Promise<FieldActionInfo[]> {
+    return this.call({ op: "fieldActions", name });
+  }
+
+  /** Replaces a field's actions; a trigger left out loses its action. */
+  async setFieldActions(name: string, actions: FieldActionInfo[]): Promise<void> {
+    await this.call({ op: "setFieldActions", name, actions });
+  }
+
+  /** Carries out an action as `target` field's click: scripts run in the engine's sandbox and their field changes are applied; what is left (a link, a page, printing) comes back for the page. */
+  runAction(action: FieldAction, target?: string): Promise<JsOutput> {
+    return this.call({ op: "runAction", action, target });
+  }
+
+  /** What field scripts printed or asked for during edits since the last call. */
+  takeJsOutput(): Promise<JsOutput> {
+    return this.call({ op: "takeJsOutput" });
   }
 
   /** Protects with passwords and permissions; the next save is encrypted. */

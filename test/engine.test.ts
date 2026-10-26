@@ -29,6 +29,13 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     delete_field: (name) => void calls.push(`delete_field ${name}`),
     delete_field_widget: (name, widget) => void calls.push(`delete_widget ${name} ${widget}`),
     set_field_props: (name, spec) => void calls.push(`field_props ${name} ${spec}`),
+    field_actions: () => JSON.stringify([{ trigger: "mouse_up", kind: "uri", url: "https://example.org" }]),
+    set_field_actions: (name, actions) => void calls.push(`actions ${name} ${actions}`),
+    run_action: (action, target) => {
+      calls.push(`run ${action} ${target ?? "-"}`);
+      return JSON.stringify({ alerts: ["done"], console: [], requests: [{ type: "print" }], errors: [], result: null });
+    },
+    take_js_output: () => JSON.stringify({ alerts: [], console: ["hi"], requests: [], errors: [] }),
     protect: (spec) => void calls.push(`protect ${spec}`),
     remove_protection: () => void calls.push("remove_protection"),
     layers: () => JSON.stringify([{ index: 0, name: "Notes", visible: true }]),
@@ -215,6 +222,10 @@ describe("Engine", () => {
     e.handle({ op: "deleteField", name: "Agree" });
     e.handle({ op: "deleteFieldWidget", name: "Group1", widget: 1.8 });
     e.handle({ op: "setFieldProps", name: "Agree", change: { required: true } });
+    expect(e.handle({ op: "fieldActions", name: "Go" }).value).toMatchObject([{ trigger: "mouse_up", kind: "uri" }]);
+    e.handle({ op: "setFieldActions", name: "Go", actions: [{ trigger: "mouse_up", kind: "reset", fields: [] }] });
+    expect(e.handle({ op: "runAction", action: { kind: "javascript", script: "app.alert('x')" }, target: "Go" }).value).toMatchObject({ alerts: ["done"], requests: [{ type: "print" }] });
+    expect(e.handle({ op: "takeJsOutput" }).value).toMatchObject({ console: ["hi"] });
     e.handle({ op: "protect", spec: { open: "pw", printing: "low" } });
     e.handle({ op: "removeProtection" });
     expect(e.handle({ op: "layers" }).value).toEqual([{ index: 0, name: "Notes", visible: true }]);
@@ -234,6 +245,8 @@ describe("Engine", () => {
       "delete_field Agree",
       "delete_widget Group1 1",
       'field_props Agree {"required":true}',
+      'actions Go [{"trigger":"mouse_up","kind":"reset","fields":[]}]',
+      `run {"kind":"javascript","script":"app.alert('x')"} Go`,
       'protect {"open":"pw","printing":"low"}',
       "remove_protection",
       "layer 0 false",
