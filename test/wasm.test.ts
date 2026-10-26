@@ -133,4 +133,15 @@ describe.skipIf(!built)("the real engine", () => {
     again.handle({ op: "open", bytes: signed });
     expect(again.handle({ op: "signatures" }).value).toMatchObject([{ signed: true, signer: "Ada Example" }]);
   });
+
+  it("signs with an RSA certificate in the browser build", async () => {
+    const p12 = process.env.RSA_P12;
+    if (!p12) return;
+    const e = await engine();
+    e.handle({ op: "open", bytes: fixture(1) });
+    const signed = e.handle({ op: "signWithCertificate", p12: new Uint8Array(fs.readFileSync(p12)), password: "pw", spec: { page: 0, box: [20, 200, 160, 260] } }).value as Uint8Array;
+    const again = await engine();
+    again.handle({ op: "open", bytes: signed });
+    expect(again.handle({ op: "signatures" }).value).toMatchObject([{ signed: true }]);
+  });
 });
