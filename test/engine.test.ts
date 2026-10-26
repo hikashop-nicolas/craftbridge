@@ -98,5 +98,9 @@ describe("Engine", () => {
     expect(toEngineError(new Error("needs-password: the document is protected by a password"))).toMatchObject({ code: "needs-password", message: "the document is protected by a password" });
     expect(toEngineError(new Error("wrong-password: nope"))).toMatchObject({ code: "wrong-password" });
     expect(toEngineError("boom")).toMatchObject({ code: "failed", message: "boom" });
+    // converting an error that already has its code must keep it (the worker converts twice)
+    const once = toEngineError(new Error("needs-password: protected"));
+    expect(toEngineError(once)).toBe(once);
+    expect(toEngineError(once).code).toBe("needs-password");
   });
 });

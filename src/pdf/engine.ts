@@ -36,6 +36,8 @@ export class EngineError extends Error {
 
 /** wasm-bindgen errors arrive as Error objects; an open error starts with its code and a colon. */
 export function toEngineError(e: unknown): EngineError {
+  // Already one: converting again would read its message without the code prefix and lose the code.
+  if (e instanceof EngineError) return e;
   const message = e instanceof Error ? e.message : String(e);
   const m = /^(needs-password|wrong-password|invalid): ?([\s\S]*)$/.exec(message);
   return m ? new EngineError(m[1] as ErrorCode, m[2] || message) : new EngineError("failed", message);
