@@ -15,6 +15,7 @@ export interface WasmPdf {
   rotate_pages(pages: Uint32Array | number[], degrees: number): void;
   move_pages(pages: Uint32Array | number[], to: number): void;
   insert_blank_page(at: number, width: number, height: number): void;
+  insert_pages_from(name: string, bytes: Uint8Array, at: number): void;
   objects(page: number): string;
   move_objects(page: number, targets: string, dx: number, dy: number): void;
   resize_object(page: number, kind: string, index: number, view: number[]): void;
@@ -119,6 +120,9 @@ export class Engine {
         return { value: null };
       case "insertBlankPage":
         this.need().insert_blank_page(Math.trunc(call.at), call.width, call.height);
+        return { value: null };
+      case "insertPagesFrom":
+        this.need().insert_pages_from(call.name, call.bytes, Math.trunc(call.at));
         return { value: null };
       case "objects":
         return { value: JSON.parse(this.need().objects(call.page)) as PageObject[] };

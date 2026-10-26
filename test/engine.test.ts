@@ -22,6 +22,7 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     rotate_pages: (list, d) => void calls.push(`rotate ${[...list].join(",")} ${d}`),
     move_pages: (list, to) => void calls.push(`move ${[...list].join(",")} ${to}`),
     insert_blank_page: () => void (pages += 1),
+    insert_pages_from: (name, bytes, at) => void calls.push(`pages_from ${name} ${bytes.length} ${at}`),
     can_undo: () => (calls.length ? "Edit" : undefined),
     can_redo: () => null,
     undo: () => void calls.push("undo"),
@@ -137,6 +138,7 @@ describe("Engine", () => {
     e.handle({ op: "deleteObject", page: 0, target: { kind: "image", index: 0 } });
     e.handle({ op: "setText", page: 0, target: { kind: "text", index: 2 }, style: { size: 20 } });
     e.handle({ op: "cover", page: 0, view: [1, 1, 5, 5] });
+    e.handle({ op: "insertPagesFrom", name: "more.pdf", bytes: new Uint8Array(3), at: 2.7 });
     expect(calls).toEqual([
       'move_objects [{"kind":"text","index":0}] 3 -4',
       "resize added 1 1,2,3,4",
@@ -147,6 +149,7 @@ describe("Engine", () => {
       "delete_object image 0",
       'set_text text 2 undefined {"size":20}',
       "cover 1,1,5,5",
+      "pages_from more.pdf 3 2",
     ]);
   });
 

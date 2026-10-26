@@ -80,7 +80,7 @@ export class PdfDocument {
    */
   async execute(call: EditCall): Promise<void> {
     await this.call(call);
-    if (["deletePages", "insertBlankPage", "undo", "redo"].includes(call.op)) await this.refresh();
+    if (["deletePages", "insertBlankPage", "insertPagesFrom", "undo", "redo"].includes(call.op)) await this.refresh();
   }
 
   /** Everything on the page that can be moved, resized, restyled or deleted. */
@@ -185,6 +185,12 @@ export class PdfDocument {
   /** Moves pages so the first of them lands at index `to` of the new order. */
   async movePages(pages: number[], to: number): Promise<void> {
     await this.call({ op: "movePages", pages, to });
+  }
+
+  /** Adds every page of another PDF so its first lands at page index `at` (the page count appends them). */
+  async insertPagesFrom(name: string, bytes: Uint8Array, at: number): Promise<void> {
+    await this.call({ op: "insertPagesFrom", name, bytes, at });
+    await this.refresh();
   }
 
   async insertBlankPage(at: number, width: number, height: number): Promise<void> {

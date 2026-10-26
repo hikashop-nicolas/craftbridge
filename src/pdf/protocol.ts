@@ -122,6 +122,7 @@ export type Call =
   | { op: "rotatePages"; pages: number[]; degrees: number }
   | { op: "movePages"; pages: number[]; to: number }
   | { op: "insertBlankPage"; at: number; width: number; height: number }
+  | { op: "insertPagesFrom"; name: string; bytes: Uint8Array; at: number }
   | { op: "objects"; page: number }
   | { op: "moveObjects"; page: number; targets: ObjectRef[]; dx: number; dy: number }
   | { op: "resizeObject"; page: number; target: ObjectRef; view: Box }
@@ -157,6 +158,7 @@ export type EditCall = Extract<
   | { op: "rotatePages" }
   | { op: "movePages" }
   | { op: "insertBlankPage" }
+  | { op: "insertPagesFrom" }
   | { op: "moveObjects" }
   | { op: "resizeObject" }
   | { op: "rotateObject" }
