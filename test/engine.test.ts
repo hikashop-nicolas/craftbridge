@@ -35,6 +35,8 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
       calls.push(`run ${action} ${target ?? "-"}`);
       return JSON.stringify({ alerts: ["done"], console: [], requests: [{ type: "print" }], errors: [], result: null });
     },
+    field_scripts: () => JSON.stringify({ calculate: "event.value = 1;" }),
+    set_field_script: (name, event, script) => void calls.push(`script ${name} ${event} ${script}`),
     take_js_output: () => JSON.stringify({ alerts: [], console: ["hi"], requests: [], errors: [] }),
     protect: (spec) => void calls.push(`protect ${spec}`),
     remove_protection: () => void calls.push("remove_protection"),
@@ -225,6 +227,8 @@ describe("Engine", () => {
     expect(e.handle({ op: "fieldActions", name: "Go" }).value).toMatchObject([{ trigger: "mouse_up", kind: "uri" }]);
     e.handle({ op: "setFieldActions", name: "Go", actions: [{ trigger: "mouse_up", kind: "reset", fields: [] }] });
     expect(e.handle({ op: "runAction", action: { kind: "javascript", script: "app.alert('x')" }, target: "Go" }).value).toMatchObject({ alerts: ["done"], requests: [{ type: "print" }] });
+    expect(e.handle({ op: "fieldScripts", name: "Total" }).value).toEqual({ calculate: "event.value = 1;" });
+    e.handle({ op: "setFieldScript", name: "Total", event: "calculate", script: "event.value = 2;" });
     expect(e.handle({ op: "takeJsOutput" }).value).toMatchObject({ console: ["hi"] });
     e.handle({ op: "protect", spec: { open: "pw", printing: "low" } });
     e.handle({ op: "removeProtection" });
@@ -247,6 +251,7 @@ describe("Engine", () => {
       'field_props Agree {"required":true}',
       'actions Go [{"trigger":"mouse_up","kind":"reset","fields":[]}]',
       `run {"kind":"javascript","script":"app.alert('x')"} Go`,
+      "script Total calculate event.value = 2;",
       'protect {"open":"pw","printing":"low"}',
       "remove_protection",
       "layer 0 false",

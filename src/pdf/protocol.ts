@@ -194,6 +194,9 @@ export type JsRequest =
   | { type: "saveAs" }
   | { type: "panel"; panel: string };
 
+/** The events a field's own script can answer: a key typed, showing the value, checking it, working it out from other fields. */
+export type ScriptEvent = "keystroke" | "format" | "validate" | "calculate";
+
 /** What scripts printed or asked for: alerts to show, console lines, requests for the page, and their errors. */
 export interface JsOutput {
   alerts: string[];
@@ -289,6 +292,8 @@ export type Call =
   | { op: "fieldActions"; name: string }
   | { op: "setFieldActions"; name: string; actions: FieldActionInfo[] }
   | { op: "runAction"; action: FieldAction; target?: string }
+  | { op: "fieldScripts"; name: string }
+  | { op: "setFieldScript"; name: string; event: ScriptEvent; script: string }
   | { op: "takeJsOutput" }
   | { op: "protect"; spec: ProtectSpec }
   | { op: "removeProtection" }
@@ -337,6 +342,7 @@ export type EditCall = Extract<
   | { op: "setFieldProps" }
   | { op: "setFieldActions" }
   | { op: "runAction" }
+  | { op: "setFieldScript" }
   | { op: "protect" }
   | { op: "removeProtection" }
   | { op: "addPictureStamp" }

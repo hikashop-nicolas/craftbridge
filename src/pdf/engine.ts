@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
+import type { ScriptEvent, AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -45,6 +45,8 @@ export interface WasmPdf {
   set_field_actions(name: string, actions: string): void;
   run_action(action: string, target?: string): string;
   take_js_output(): string;
+  field_scripts(name: string): string;
+  set_field_script(name: string, event: string, script: string): void;
   protect(spec: string): void;
   remove_protection(): void;
   layers(): string;
@@ -224,6 +226,11 @@ export class Engine {
         return { value: null };
       case "runAction":
         return { value: JSON.parse(this.need().run_action(JSON.stringify(call.action), call.target)) as JsOutput };
+      case "fieldScripts":
+        return { value: JSON.parse(this.need().field_scripts(call.name)) as Partial<Record<ScriptEvent, string>> };
+      case "setFieldScript":
+        this.need().set_field_script(call.name, call.event, call.script);
+        return { value: null };
       case "takeJsOutput":
         return { value: JSON.parse(this.need().take_js_output()) as JsOutput };
       case "protect":

@@ -149,6 +149,11 @@ describe.skipIf(!built)("the real engine", () => {
     expect(out).toMatchObject({ alerts: ["done"], requests: [{ type: "print" }] });
     const total = (e.handle({ op: "fields", page: 0 }).value as { name: string; value: string }[]).find((f) => f.name === "Total");
     expect(total?.value).toBe("20");
+    e.handle({ op: "setFieldScript", name: "Total", event: "calculate", script: "event.value = Number(this.getField('Qty').value) + 1;" });
+    expect(e.handle({ op: "fieldScripts", name: "Total" }).value).toMatchObject({ calculate: expect.stringContaining("getField") });
+    e.handle({ op: "setField", name: "Qty", value: { text: "9" } });
+    const after = (e.handle({ op: "fields", page: 0 }).value as { name: string; value: string }[]).find((f) => f.name === "Total");
+    expect(after?.value).toBe("10");
   });
 
   it("signs with an RSA certificate in the browser build", async () => {

@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
+export type { ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -237,6 +237,16 @@ export class PdfDocument {
   /** Carries out an action as `target` field's click: scripts run in the engine's sandbox and their field changes are applied; what is left (a link, a page, printing) comes back for the page. */
   runAction(action: FieldAction, target?: string): Promise<JsOutput> {
     return this.call({ op: "runAction", action, target });
+  }
+
+  /** The scripts a field answers its own events with (a key typed, formatting, validating, calculating). */
+  fieldScripts(name: string): Promise<Partial<Record<ScriptEvent, string>>> {
+    return this.call({ op: "fieldScripts", name });
+  }
+
+  /** Sets a field's script for an event; an empty script removes it. */
+  async setFieldScript(name: string, event: ScriptEvent, script: string): Promise<void> {
+    await this.call({ op: "setFieldScript", name, event, script });
   }
 
   /** What field scripts printed or asked for during edits since the last call. */
