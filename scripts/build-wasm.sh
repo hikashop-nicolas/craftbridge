@@ -7,10 +7,12 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 rev=$(tr -d '[:space:]' < "$here/pdfcraft.rev")
 src="${PDFCRAFT_SRC:-$here/vendor/pdfcraft}"
 
+# A folder that already holds build output (a CI cache of target/) is not a clone yet: start the repository in place.
 if [ ! -d "$src/.git" ]; then
-  git clone --quiet https://github.com/hikashop-nicolas/pdfcraft.git "$src"
+  git init --quiet "$src"
+  git -C "$src" remote add origin https://github.com/hikashop-nicolas/pdfcraft.git
 fi
-git -C "$src" fetch --quiet origin
+git -C "$src" fetch --quiet origin "$rev"
 git -C "$src" checkout --quiet --detach "$rev"
 
 want=$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/[^0-9.]/, "", $0); print; exit }' "$src/Cargo.lock")
@@ -30,9 +32,10 @@ fi
 fonts_rev=$(tr -d '[:space:]' < "$here/craft-fonts.rev")
 fonts_src="${CRAFT_FONTS_SRC:-$here/vendor/craft-fonts}"
 if [ ! -d "$fonts_src/.git" ]; then
-  git clone --quiet https://github.com/storytold/craft-fonts.git "$fonts_src"
+  git init --quiet "$fonts_src"
+  git -C "$fonts_src" remote add origin https://github.com/storytold/craft-fonts.git
 fi
-git -C "$fonts_src" fetch --quiet origin
+git -C "$fonts_src" fetch --quiet origin "$fonts_rev"
 git -C "$fonts_src" checkout --quiet --detach "$fonts_rev"
 input="$here/vendor/fonts-input"
 rm -rf "$input"
