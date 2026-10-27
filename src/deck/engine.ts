@@ -8,6 +8,7 @@ export interface WasmDeck {
   save(): Uint8Array;
   add_font(bytes: Uint8Array): string;
   render(index: number, scale: number, edit: boolean): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  set_tool(tool: string): void;
   pointer(event: string): string;
   hit(x: number, y: number, tol: number): string;
   overlay(): string;
@@ -63,6 +64,9 @@ export class Engine {
         return { value: JSON.parse(this.need().commands()) as CommandInfo[] };
       case "execute":
         return { value: JSON.parse(this.need().execute(call.command, call.params === undefined ? "" : JSON.stringify(call.params))) as unknown };
+      case "setTool":
+        this.need().set_tool(JSON.stringify(call.tool));
+        return { value: null };
       case "pointer":
         return { value: JSON.parse(this.need().pointer(JSON.stringify(call.event satisfies PointerEvent))) as unknown };
       case "hit":

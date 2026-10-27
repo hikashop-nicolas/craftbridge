@@ -72,6 +72,13 @@ export interface Overlay {
   missingFonts?: string[];
 }
 
+/** The pointer tool: select, draw a preset shape, draw a text box, or ink. */
+export type Tool =
+  | { kind: "select" }
+  | { kind: "shape"; preset: string }
+  | { kind: "textBox" }
+  | { kind: "ink"; mode: "pen" | "highlighter" | "eraser"; color?: unknown; width?: number };
+
 /** A pointer event in slide points; `tol` is the hit tolerance in points. */
 export interface PointerEvent {
   kind: "down" | "drag" | "up" | "move" | "doubleClick" | "tripleClick" | "contextClick";
@@ -94,6 +101,7 @@ export type Call =
   | { op: "load"; name: string; bytes: Uint8Array }
   | { op: "commands" }
   | { op: "execute"; command: string; params?: unknown }
+  | { op: "setTool"; tool: Tool }
   | { op: "pointer"; event: PointerEvent }
   | { op: "hit"; x: number; y: number; tol: number }
   | { op: "overlay" }

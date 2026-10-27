@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Reply } from "./protocol";
+import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Reply, Tool } from "./protocol";
 
 export { EngineError };
-export type { CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered };
+export type { CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Tool };
 
 export interface OpenOptions {
   /** A worker running `craftbridge/deck/worker`; one is created from `workerUrl` when omitted. */
@@ -58,6 +58,11 @@ export class DeckSession {
   /** Runs a command (see `commands()`); what it answers. One finished command is one undo step. */
   execute<T = unknown>(id: string, params?: unknown): Promise<T> {
     return this.call({ op: "execute", command: id, params });
+  }
+
+  /** Picks the pointer tool (select, a shape to draw, a text box, ink). */
+  async setTool(tool: Tool): Promise<void> {
+    await this.call({ op: "setTool", tool });
   }
 
   /** A pointer event of the active tool, in slide points. */
