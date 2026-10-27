@@ -33,6 +33,9 @@ out="$here/wasm/deck"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name deckcraft_wasm \
   "${CARGO_TARGET_DIR:-$src/target}/wasm32-unknown-unknown/release/deckcraft_wasm.wasm"
+# Faces a host loads on demand (Korean, Simplified Chinese), too big to carry in the module itself.
+mkdir -p "$out/fonts"
+cp "$here/vendor/fonts-input/fonts/nanum-gothic/NanumGothic-Regular.ttf" "$here/vendor/fonts-input/fonts/omnitext-hans/OmnitextHans-Regular.otf" "$out/fonts/"
 if [ -z "${SKIP_WASM_OPT:-}" ] && command -v wasm-opt >/dev/null 2>&1; then
   wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals --enable-simd \
     "$out/deckcraft_wasm_bg.wasm" -o "$out/deckcraft_wasm_bg.wasm"
