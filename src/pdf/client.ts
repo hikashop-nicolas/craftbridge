@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
+export type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -235,7 +235,7 @@ export class PdfDocument {
   }
 
   /** Carries out an action as `target` field's click: scripts run in the engine's sandbox and their field changes are applied; what is left (a link, a page, printing) comes back for the page. */
-  runAction(action: FieldAction, target?: string): Promise<JsOutput> {
+  runAction(action: RunnableAction, target?: string): Promise<JsOutput> {
     return this.call({ op: "runAction", action, target });
   }
 

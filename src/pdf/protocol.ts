@@ -183,6 +183,9 @@ export type FieldAction =
   | { kind: "submit"; url: string }
   | { kind: "other"; text: string };
 
+/** What runAction takes: an action, or the button's own click, which an XFA form keeps in its template. */
+export type RunnableAction = FieldAction | { kind: "click" };
+
 export type FieldActionInfo = FieldAction & { trigger: ActionTrigger };
 
 /** What a script asks the page to do. */
@@ -361,7 +364,7 @@ export type Call =
   | { op: "setFieldProps"; name: string; change: FieldChange }
   | { op: "fieldActions"; name: string }
   | { op: "setFieldActions"; name: string; actions: FieldActionInfo[] }
-  | { op: "runAction"; action: FieldAction; target?: string }
+  | { op: "runAction"; action: RunnableAction; target?: string }
   | { op: "fieldScripts"; name: string }
   | { op: "setFieldScript"; name: string; event: ScriptEvent; script: string }
   | { op: "takeJsOutput" }
