@@ -27,7 +27,8 @@ if [ "$want" != "$have" ]; then
   fi
 fi
 
-(cd "$src" && cargo build -p deckcraft-wasm --target wasm32-unknown-unknown --release --locked)
+"$here/scripts/prepare-fonts.sh"
+(cd "$src" && CRAFT_FONTS_DIR="$here/vendor/fonts-input" cargo build -p deckcraft-wasm --target wasm32-unknown-unknown --release --locked)
 out="$here/wasm/deck"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name deckcraft_wasm \
