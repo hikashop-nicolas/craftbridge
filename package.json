@@ -1,7 +1,7 @@
 {
   "name": "craftbridge",
   "version": "0.0.1",
-  "description": "Browser bindings for the ArtCraft engines: PdfCraft's PDF engine as a wasm module behind a Web Worker.",
+  "description": "Browser bindings for the ArtCraft engines: PdfCraft (PDF) and DeckCraft (presentations) as wasm modules behind Web Workers.",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -12,18 +12,28 @@
     "./pdf/worker": {
       "types": "./dist/pdf/worker.d.ts",
       "import": "./dist/pdf/worker.js"
+    },
+    "./deck": {
+      "types": "./dist/deck/index.d.ts",
+      "import": "./dist/deck/index.js"
+    },
+    "./deck/worker": {
+      "types": "./dist/deck/worker.d.ts",
+      "import": "./dist/deck/worker.js"
     }
   },
   "files": [
     "dist",
     "wasm",
-    "pdfcraft.rev"
+    "pdfcraft.rev",
+    "deckcraft.rev"
   ],
   "scripts": {
     "build:wasm": "sh scripts/build-wasm.sh",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.check.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "build:deck-wasm": "sh scripts/build-deck-wasm.sh"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
