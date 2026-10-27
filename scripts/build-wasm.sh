@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds the PDF engine to wasm from the exact fork commit in pdfcraft.rev and writes wasm/pdf/.
 # Needs: git, sha256sum or shasum, a Rust toolchain with the wasm32-unknown-unknown target, wasm-bindgen-cli at the
-# version in the engine's Cargo.lock, and (optionally) wasm-opt from binaryen.
+# version in the engine's Cargo.lock, and (optionally) wasm-opt from binaryen 133 or newer (SKIP_WASM_OPT=1 leaves it out).
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 rev=$(tr -d '[:space:]' < "$here/pdfcraft.rev")
@@ -51,7 +51,7 @@ out="$here/wasm/pdf"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name pdfcraft_wasm \
   "${CARGO_TARGET_DIR:-$src/target}/wasm32-unknown-unknown/release/pdfcraft_wasm.wasm"
-if command -v wasm-opt >/dev/null 2>&1; then
+if [ -z "${SKIP_WASM_OPT:-}" ] && command -v wasm-opt >/dev/null 2>&1; then
   wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
     "$out/pdfcraft_wasm_bg.wasm" -o "$out/pdfcraft_wasm_bg.wasm"
 fi
