@@ -210,8 +210,8 @@ describe.skipIf(!built)("the real engine", () => {
         { op: "addHeaderFooter", spec: { text: [text, "", "", "", "", ""] } },
       ] as const) expect(attempt(call), `${lang} ${call.op}`).toBeNull();
     }
-    // Japanese and Chinese need the fonts the release build carries; a plain build says so
-    for (const [lang, text] of [["ja", "こんにちは世界"], ["zh", "们这说对时发国为学习，欢迎使用"]] as const) {
+    // Japanese, Chinese and Korean need the fonts the release build carries; a plain build says so
+    for (const [lang, text] of [["ja", "こんにちは世界"], ["zh", "们这说对时发国为学习，欢迎使用"], ["ko", "안녕하세요 세계 문서"]] as const) {
       const results = [
         attempt({ op: "addText", page: 0, view: [10, 100, 190, 130], text }),
         attempt({ op: "editTextBlock", page: 0, block: 0, text }),
