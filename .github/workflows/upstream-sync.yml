@@ -1,0 +1,52 @@
+name: Upstream sync check
+
+# Every week: does PdfCraft's main still merge into our fork's carry branch, build and pass the tests of the crates we change?
+# A failure opens (or updates) an issue; nothing is pushed. Run scripts/sync-upstream.sh --push by hand to publish carry-next.
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            vendor/pdfcraft/target
+          key: upstream-sync-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: upstream-sync-${{ runner.os }}-
+      - name: Merge, build and test
+        id: sync
+        run: |
+          rustup update stable
+          rustup target add wasm32-unknown-unknown
+          set +e
+          sh scripts/sync-upstream.sh 2>&1 | tee sync.log
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Report a problem
+        if: steps.sync.outputs.code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          why="the merge builds or tests badly"
+          [ "${{ steps.sync.outputs.code }}" = "2" ] && why="upstream main conflicts with carry"
+          { echo "Weekly upstream check: $why."; echo; echo '```'; tail -60 sync.log; echo '```'; } > body.md
+          existing=$(gh issue list --label upstream-sync --state open --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh label create upstream-sync --color d93f0b >/dev/null 2>&1 || true
+            gh issue create --title "Upstream sync: $why" --label upstream-sync --body-file body.md
+          fi

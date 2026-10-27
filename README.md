@@ -52,3 +52,12 @@ pdf.close();
 
 MIT. The engines have their own licences (PdfCraft is MIT OR Apache-2.0). The ArtCraft name and
 logos are trademarks of their owners and are not used here.
+
+## Keeping the engine fork current
+
+The engine is PdfCraft's `main` plus our `carry` branch (fixes not yet merged upstream). `scripts/sync-upstream.sh` merges
+upstream's main into a scratch `carry-next`, builds the wasm and runs the tests of the crates we change; the weekly
+workflow `.github/workflows/upstream-sync.yml` runs it and opens an issue when it conflicts or fails. `--push` publishes
+`carry-next` to the fork; taking it means fast-forwarding `carry`, putting the new hash in `pdfcraft.rev` and running
+`npm test` against a fresh `npm run build:wasm`. Sending our patches upstream keeps the merge small.
+
