@@ -63,6 +63,8 @@ export interface Overlay {
   revision?: number;
   slide?: number;
   slides?: number;
+  /** The selected table cells as one box, in slide points: x, y, width, height. */
+  cells?: [number, number, number, number] | null;
   /** What is being edited: the slides, or a master, a layout or a notes or handout page. */
   target?: { kind: "slides" | "master" | "layout" | "handout" | "notesMaster"; master?: number; layout?: number };
   width?: number;
