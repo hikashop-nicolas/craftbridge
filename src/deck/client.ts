@@ -1,5 +1,5 @@
 import { EngineError } from "./engine";
-import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Reply, Tool } from "./protocol";
+import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Reply, ShowInfo, Tool } from "./protocol";
 
 export { EngineError };
 export type { CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Tool };
@@ -82,6 +82,21 @@ export class DeckSession {
   /** Draws slide `index` at `scale` device pixels per point. `edit` shows placeholder prompts. */
   render(index: number, scale: number, edit = false): Promise<Rendered> {
     return this.call({ op: "render", index, scale, edit });
+  }
+
+  /** The animation steps of slide `index` for a slide show. */
+  showInfo(index: number): Promise<ShowInfo> {
+    return this.call({ op: "showInfo", index });
+  }
+
+  /** Slide `index` at animation step `step`, `t` seconds into it (a step past the last: everything built). */
+  renderStep(index: number, step: number, t: number, scale: number): Promise<Rendered> {
+    return this.call({ op: "renderStep", index, step, t, scale });
+  }
+
+  /** The frame of slide `index`'s transition at progress `t` (0 to 1). */
+  renderTransition(index: number, t: number, scale: number): Promise<Rendered> {
+    return this.call({ op: "renderTransition", index, t, scale });
   }
 
   /** The presentation as .pptx bytes. */

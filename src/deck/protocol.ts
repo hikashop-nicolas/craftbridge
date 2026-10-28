@@ -106,8 +106,18 @@ export type Call =
   | { op: "hit"; x: number; y: number; tol: number }
   | { op: "overlay" }
   | { op: "render"; index: number; scale: number; edit?: boolean }
+  | { op: "showInfo"; index: number }
+  | { op: "renderStep"; index: number; step: number; t: number; scale: number }
+  | { op: "renderTransition"; index: number; t: number; scale: number }
   | { op: "save" }
   | { op: "addFont"; bytes: Uint8Array };
+
+/** What a slide show needs of a slide: its animation steps (seconds each), and which start by themselves. */
+export interface ShowInfo {
+  steps: number;
+  auto: boolean[];
+  durations: number[];
+}
 
 export type Request = Call & { id: number };
 

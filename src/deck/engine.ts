@@ -1,4 +1,4 @@
-import type { Call, CommandInfo, ErrorCode, Hit, LoadInfo, Overlay, PointerEvent, Rendered } from "./protocol";
+import type { Call, CommandInfo, ErrorCode, Hit, LoadInfo, Overlay, PointerEvent, Rendered, ShowInfo } from "./protocol";
 
 /** The slice of the generated `Deck` class the engine uses. */
 export interface WasmDeck {
@@ -8,6 +8,9 @@ export interface WasmDeck {
   save(): Uint8Array;
   add_font(bytes: Uint8Array): string;
   render(index: number, scale: number, edit: boolean): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  show_info(index: number): string;
+  render_step(index: number, step: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  render_transition(index: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   set_tool(tool: string): void;
   pointer(event: string): string;
   hit(x: number, y: number, tol: number): string;
@@ -75,6 +78,17 @@ export class Engine {
         return { value: JSON.parse(this.need().overlay()) as Overlay };
       case "render": {
         const r = this.need().render(call.index, call.scale, call.edit ?? false);
+        const rgba = r.take_rgba();
+        const out: Rendered = { width: r.width, height: r.height, rgba };
+        r.free?.();
+        return { value: out, transfer: [rgba.buffer as ArrayBuffer] };
+      }
+      case "showInfo":
+        return { value: JSON.parse(this.need().show_info(call.index)) as ShowInfo };
+      case "renderStep":
+      case "renderTransition": {
+        const d = this.need();
+        const r = call.op === "renderStep" ? d.render_step(call.index, call.step, call.t, call.scale) : d.render_transition(call.index, call.t, call.scale);
         const rgba = r.take_rgba();
         const out: Rendered = { width: r.width, height: r.height, rgba };
         r.free?.();
