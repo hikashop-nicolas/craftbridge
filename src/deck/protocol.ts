@@ -109,6 +109,8 @@ export type Call =
   | { op: "showInfo"; index: number }
   | { op: "renderStep"; index: number; step: number; t: number; scale: number }
   | { op: "renderTransition"; index: number; t: number; scale: number }
+  | { op: "exportPdf"; params?: unknown }
+  | { op: "exportPng"; index: number; scale: number }
   | { op: "save" }
   | { op: "addFont"; bytes: Uint8Array };
 

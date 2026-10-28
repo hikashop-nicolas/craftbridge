@@ -99,6 +99,16 @@ export class DeckSession {
     return this.call({ op: "renderTransition", index, t, scale });
   }
 
+  /** The presentation as a PDF; `params` as for the engine's `file.export` (layout, perPage, slides, ...). */
+  exportPdf(params: unknown = {}): Promise<Uint8Array> {
+    return this.call({ op: "exportPdf", params });
+  }
+
+  /** Slide `index` as a PNG at `scale` pixels per point. */
+  exportPng(index: number, scale: number): Promise<Uint8Array> {
+    return this.call({ op: "exportPng", index, scale });
+  }
+
   /** The presentation as .pptx bytes. */
   save(): Promise<Uint8Array> {
     return this.call({ op: "save" });

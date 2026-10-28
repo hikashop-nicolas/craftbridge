@@ -11,6 +11,8 @@ export interface WasmDeck {
   show_info(index: number): string;
   render_step(index: number, step: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   render_transition(index: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  export_pdf(params: string): Uint8Array;
+  export_png(index: number, scale: number): Uint8Array;
   set_tool(tool: string): void;
   pointer(event: string): string;
   hit(x: number, y: number, tol: number): string;
@@ -93,6 +95,14 @@ export class Engine {
         const out: Rendered = { width: r.width, height: r.height, rgba };
         r.free?.();
         return { value: out, transfer: [rgba.buffer as ArrayBuffer] };
+      }
+      case "exportPdf": {
+        const bytes = this.need().export_pdf(JSON.stringify(call.params ?? {}));
+        return { value: bytes, transfer: [bytes.buffer as ArrayBuffer] };
+      }
+      case "exportPng": {
+        const bytes = this.need().export_png(call.index, call.scale);
+        return { value: bytes, transfer: [bytes.buffer as ArrayBuffer] };
       }
       case "save": {
         const bytes = this.need().save();
