@@ -57,11 +57,13 @@ describe.skipIf(!built)("the real deck engine", () => {
     run(e, { op: "execute", command: "file.new", params: {} });
     run(e, { op: "execute", command: "insert.textBox", params: { rect: [60, 100, 400, 60], text: "Bonjour" } });
     run(e, { op: "execute", command: "slide.new", params: { layout: "blank", at: 1 } });
+    expect(run(e, { op: "transitionBegin", index: 1, scale: 0.3 })).toBe(true);
     expect(run(e, { op: "showInfo", index: 0 })).toMatchObject({ steps: expect.any(Number), auto: expect.any(Array) });
     for (const call of [
       { op: "renderStep", index: 0, step: 0, t: 0, scale: 0.3 },
       { op: "renderShow", index: 0, step: 0, t: 0, plays: [], scale: 0.3 },
       { op: "renderTransition", index: 1, t: 0.5, scale: 0.3 },
+      { op: "transitionFrame", t: 0.5 },
       { op: "renderLayout", master: 0, layout: -1, scale: 0.3 },
     ] as const) {
       const r = run(e, call);

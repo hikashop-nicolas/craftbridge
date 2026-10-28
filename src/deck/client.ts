@@ -99,6 +99,16 @@ export class DeckSession {
     return this.call({ op: "renderShow", index, step, t, plays, scale });
   }
 
+  /** Draws the slides of slide `index`'s transition once (false: a morph, which only `renderTransition` can draw). */
+  transitionBegin(index: number, scale: number): Promise<boolean> {
+    return this.call({ op: "transitionBegin", index, scale });
+  }
+
+  /** A frame (progress 0 to 1) of the transition `transitionBegin` prepared: only composites, so it is quick. */
+  transitionFrame(t: number): Promise<Rendered> {
+    return this.call({ op: "transitionFrame", t });
+  }
+
   /** The frame of slide `index's transition at progress `t` (0 to 1). */
   renderTransition(index: number, t: number, scale: number): Promise<Rendered> {
     return this.call({ op: "renderTransition", index, t, scale });

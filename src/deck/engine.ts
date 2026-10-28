@@ -11,6 +11,8 @@ export interface WasmDeck {
   show_info(index: number): string;
   render_step(index: number, step: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   render_show(index: number, step: number, t: number, plays: string, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  transition_begin(index: number, scale: number): boolean;
+  transition_frame(t: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   render_transition(index: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   export_pdf(params: string): Uint8Array;
   export_png(index: number, scale: number): Uint8Array;
@@ -90,6 +92,15 @@ export class Engine {
       }
       case "showInfo":
         return { value: JSON.parse(this.need().show_info(call.index)) as ShowInfo };
+      case "transitionBegin":
+        return { value: this.need().transition_begin(call.index, call.scale) };
+      case "transitionFrame": {
+        const r = this.need().transition_frame(call.t);
+        const rgba = r.take_rgba();
+        const out: Rendered = { width: r.width, height: r.height, rgba };
+        r.free?.();
+        return { value: out, transfer: [rgba.buffer as ArrayBuffer] };
+      }
       case "renderStep":
       case "renderShow":
       case "renderTransition": {
