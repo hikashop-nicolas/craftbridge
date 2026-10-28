@@ -13,6 +13,8 @@ export interface WasmDeck {
   render_show(index: number, step: number, t: number, plays: string, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   transition_begin(index: number, scale: number): boolean;
   transition_frame(t: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  transition_texture(slot: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void } | undefined;
+  transition_mesh(t: number): Float32Array;
   render_transition(index: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   export_pdf(params: string): Uint8Array;
   export_png(index: number, scale: number): Uint8Array;
@@ -100,6 +102,23 @@ export class Engine {
         const out: Rendered = { width: r.width, height: r.height, rgba };
         r.free?.();
         return { value: out, transfer: [rgba.buffer as ArrayBuffer] };
+      }
+      case "transitionTextures": {
+        const textures: (Rendered | null)[] = [];
+        const transfer: ArrayBuffer[] = [];
+        for (let slot = 0; slot < 6; slot++) {
+          const r = this.need().transition_texture(slot);
+          if (!r) { textures.push(null); continue; }
+          const rgba = r.take_rgba();
+          textures.push({ width: r.width, height: r.height, rgba });
+          transfer.push(rgba.buffer as ArrayBuffer);
+          r.free?.();
+        }
+        return { value: textures, transfer };
+      }
+      case "transitionMesh": {
+        const mesh = this.need().transition_mesh(call.t);
+        return { value: mesh, transfer: [mesh.buffer as ArrayBuffer] };
       }
       case "renderStep":
       case "renderShow":

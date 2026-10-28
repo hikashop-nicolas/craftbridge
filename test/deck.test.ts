@@ -69,6 +69,10 @@ describe.skipIf(!built)("the real deck engine", () => {
       const r = run(e, call);
       expect(r.rgba.length).toBe(r.width * r.height * 4);
     }
+    const pics = run(e, { op: "transitionTextures" });
+    expect(pics).toHaveLength(6);
+    expect(pics[1].rgba.length).toBe(pics[1].width * pics[1].height * 4);
+    expect(run(e, { op: "transitionMesh", t: 0.5 }).length % 16).toBe(0);
     expect(run(e, { op: "masters" })[0].layouts.length).toBeGreaterThan(1);
     expect(String.fromCharCode(...(run(e, { op: "exportPdf", params: { format: "pdf" } }) as Uint8Array).slice(0, 4))).toBe("%PDF");
     expect((run(e, { op: "exportPng", index: 0, scale: 0.5 }) as Uint8Array)[1]).toBe(0x50);

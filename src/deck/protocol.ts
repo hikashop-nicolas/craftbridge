@@ -117,6 +117,8 @@ export type Call =
   | { op: "renderShow"; index: number; step: number; t: number; plays: TriggerPlay[]; scale: number }
   | { op: "transitionBegin"; index: number; scale: number }
   | { op: "transitionFrame"; t: number }
+  | { op: "transitionTextures" }
+  | { op: "transitionMesh"; t: number }
   | { op: "renderTransition"; index: number; t: number; scale: number }
   | { op: "exportPdf"; params?: unknown }
   | { op: "exportPng"; index: number; scale: number }

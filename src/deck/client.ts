@@ -109,6 +109,16 @@ export class DeckSession {
     return this.call({ op: "transitionFrame", t });
   }
 
+  /** The pictures of the prepared transition (old, new, old and new background, old and new contents), for a GPU to draw. */
+  transitionTextures(): Promise<(Rendered | null)[]> {
+    return this.call({ op: "transitionTextures" });
+  }
+
+  /** The prepared transition's triangles at progress `t`: per triangle a texture slot, then three vertices of x, y, u, v, opacity. */
+  transitionMesh(t: number): Promise<Float32Array> {
+    return this.call({ op: "transitionMesh", t });
+  }
+
   /** The frame of slide `index's transition at progress `t` (0 to 1). */
   renderTransition(index: number, t: number, scale: number): Promise<Rendered> {
     return this.call({ op: "renderTransition", index, t, scale });
