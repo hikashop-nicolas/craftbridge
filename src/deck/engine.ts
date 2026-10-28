@@ -1,4 +1,4 @@
-import type { Call, CommandInfo, ErrorCode, Hit, LoadInfo, Overlay, PointerEvent, Rendered, ShowInfo } from "./protocol";
+import type { Call, CommandInfo, ErrorCode, Hit, LoadInfo, Overlay, PointerEvent, MasterInfo, Rendered, ShowInfo } from "./protocol";
 
 /** The slice of the generated `Deck` class the engine uses. */
 export interface WasmDeck {
@@ -13,6 +13,8 @@ export interface WasmDeck {
   render_transition(index: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   export_pdf(params: string): Uint8Array;
   export_png(index: number, scale: number): Uint8Array;
+  masters(): string;
+  render_layout(master: number, layout: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   set_tool(tool: string): void;
   pointer(event: string): string;
   hit(x: number, y: number, tol: number): string;
@@ -103,6 +105,15 @@ export class Engine {
       case "exportPng": {
         const bytes = this.need().export_png(call.index, call.scale);
         return { value: bytes, transfer: [bytes.buffer as ArrayBuffer] };
+      }
+      case "masters":
+        return { value: JSON.parse(this.need().masters()) as MasterInfo[] };
+      case "renderLayout": {
+        const r = this.need().render_layout(call.master, call.layout, call.scale);
+        const rgba = r.take_rgba();
+        const out: Rendered = { width: r.width, height: r.height, rgba };
+        r.free?.();
+        return { value: out, transfer: [rgba.buffer as ArrayBuffer] };
       }
       case "save": {
         const bytes = this.need().save();

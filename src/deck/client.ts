@@ -1,5 +1,5 @@
 import { EngineError } from "./engine";
-import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Reply, ShowInfo, Tool } from "./protocol";
+import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, MasterInfo, Reply, ShowInfo, Tool } from "./protocol";
 
 export { EngineError };
 export type { CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Tool };
@@ -107,6 +107,16 @@ export class DeckSession {
   /** Slide `index` as a PNG at `scale` pixels per point. */
   exportPng(index: number, scale: number): Promise<Uint8Array> {
     return this.call({ op: "exportPng", index, scale });
+  }
+
+  /** The masters and their layouts. */
+  masters(): Promise<MasterInfo[]> {
+    return this.call({ op: "masters" });
+  }
+
+  /** A layout (`layout` below zero: the master itself) as a picture. */
+  renderLayout(master: number, layout: number, scale: number): Promise<Rendered> {
+    return this.call({ op: "renderLayout", master, layout, scale });
   }
 
   /** The presentation as .pptx bytes. */

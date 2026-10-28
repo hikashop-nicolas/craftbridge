@@ -63,6 +63,8 @@ export interface Overlay {
   revision?: number;
   slide?: number;
   slides?: number;
+  /** What is being edited: the slides, or a master, a layout or a notes or handout page. */
+  target?: { kind: "slides" | "master" | "layout" | "handout" | "notesMaster"; master?: number; layout?: number };
   width?: number;
   height?: number;
   selection?: SelectedShape[];
@@ -111,8 +113,16 @@ export type Call =
   | { op: "renderTransition"; index: number; t: number; scale: number }
   | { op: "exportPdf"; params?: unknown }
   | { op: "exportPng"; index: number; scale: number }
+  | { op: "masters" }
+  | { op: "renderLayout"; master: number; layout: number; scale: number }
   | { op: "save" }
   | { op: "addFont"; bytes: Uint8Array };
+
+/** A master and the names of its layouts. */
+export interface MasterInfo {
+  name: string;
+  layouts: { name: string }[];
+}
 
 /** What a slide show needs of a slide: its animation steps (seconds each), and which start by themselves. */
 export interface ShowInfo {
