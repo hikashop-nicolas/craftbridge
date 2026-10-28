@@ -65,6 +65,8 @@ export interface Overlay {
   slides?: number;
   /** The selected table cells as one box, in slide points: x, y, width, height. */
   cells?: [number, number, number, number] | null;
+  /** The same cells as row and column numbers: first row, first column, last row, last column. */
+  cellRange?: [number, number, number, number] | null;
   /** What is being edited: the slides, or a master, a layout or a notes or handout page. */
   target?: { kind: "slides" | "master" | "layout" | "handout" | "notesMaster"; master?: number; layout?: number };
   width?: number;
@@ -112,6 +114,7 @@ export type Call =
   | { op: "render"; index: number; scale: number; edit?: boolean }
   | { op: "showInfo"; index: number }
   | { op: "renderStep"; index: number; step: number; t: number; scale: number }
+  | { op: "renderShow"; index: number; step: number; t: number; plays: TriggerPlay[]; scale: number }
   | { op: "renderTransition"; index: number; t: number; scale: number }
   | { op: "exportPdf"; params?: unknown }
   | { op: "exportPng"; index: number; scale: number }
@@ -127,10 +130,19 @@ export interface MasterInfo {
 }
 
 /** What a slide show needs of a slide: its animation steps (seconds each), and which start by themselves. */
+/** A triggered sequence: `step` clicks on the trigger played, the next one `t` seconds in. */
+export interface TriggerPlay {
+  trigger: number;
+  step: number;
+  t: number;
+}
+
 export interface ShowInfo {
   steps: number;
   auto: boolean[];
   durations: number[];
+  /** Shapes that start a sequence of their own when clicked. */
+  triggers?: { shape: number; steps: number; durations: number[] }[];
 }
 
 export type Request = Call & { id: number };

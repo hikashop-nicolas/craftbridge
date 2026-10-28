@@ -10,6 +10,7 @@ export interface WasmDeck {
   render(index: number, scale: number, edit: boolean): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   show_info(index: number): string;
   render_step(index: number, step: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
+  render_show(index: number, step: number, t: number, plays: string, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   render_transition(index: number, t: number, scale: number): { width: number; height: number; take_rgba(): Uint8Array; free?(): void };
   export_pdf(params: string): Uint8Array;
   export_png(index: number, scale: number): Uint8Array;
@@ -90,9 +91,10 @@ export class Engine {
       case "showInfo":
         return { value: JSON.parse(this.need().show_info(call.index)) as ShowInfo };
       case "renderStep":
+      case "renderShow":
       case "renderTransition": {
         const d = this.need();
-        const r = call.op === "renderStep" ? d.render_step(call.index, call.step, call.t, call.scale) : d.render_transition(call.index, call.t, call.scale);
+        const r = call.op === "renderStep" ? d.render_step(call.index, call.step, call.t, call.scale) : call.op === "renderShow" ? d.render_show(call.index, call.step, call.t, JSON.stringify(call.plays), call.scale) : d.render_transition(call.index, call.t, call.scale);
         const rgba = r.take_rgba();
         const out: Rendered = { width: r.width, height: r.height, rgba };
         r.free?.();

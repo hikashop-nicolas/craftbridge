@@ -1,5 +1,5 @@
 import { EngineError } from "./engine";
-import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, MasterInfo, Reply, ShowInfo, Tool } from "./protocol";
+import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, MasterInfo, Reply, ShowInfo, Tool, TriggerPlay } from "./protocol";
 
 export { EngineError };
 export type { CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Tool };
@@ -94,7 +94,12 @@ export class DeckSession {
     return this.call({ op: "renderStep", index, step, t, scale });
   }
 
-  /** The frame of slide `index`'s transition at progress `t` (0 to 1). */
+  /** [`renderStep`] with the playheads of triggered sequences, in the order their steps were started. */
+  renderShow(index: number, step: number, t: number, plays: TriggerPlay[], scale: number): Promise<Rendered> {
+    return this.call({ op: "renderShow", index, step, t, plays, scale });
+  }
+
+  /** The frame of slide `index's transition at progress `t` (0 to 1). */
   renderTransition(index: number, t: number, scale: number): Promise<Rendered> {
     return this.call({ op: "renderTransition", index, t, scale });
   }
