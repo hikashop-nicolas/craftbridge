@@ -324,8 +324,17 @@ export interface DocumentInfo {
 }
 
 // One request type per engine call; `id` pairs a reply with its request.
+/** A face the module was built without (Japanese, Simplified Chinese, Korean): registered once, before the first document opens. */
+export interface PdfFontFace {
+  bytes: Uint8Array;
+  family: string;
+  style: string;
+  /** ISO 15924 scripts, comma separated: `Jpan,Latn`. */
+  scripts: string;
+}
+
 export type Call =
-  | { op: "open"; bytes: Uint8Array; password?: string; wasmUrl?: string }
+  | { op: "open"; bytes: Uint8Array; password?: string; wasmUrl?: string; fonts?: PdfFontFace[] }
   | { op: "info" }
   | { op: "pageSize"; page: number }
   | { op: "render"; page: number; scale: number; tile?: Tile }

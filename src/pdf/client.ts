@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, PdfFontFace, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
+export type { PdfFontFace, RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -12,6 +12,8 @@ export interface OpenOptions {
   workerUrl?: string | URL;
   /** Where the browser finds pdfcraft_wasm_bg.wasm, when the glue code cannot work it out. */
   wasmUrl?: string;
+  /** The faces the module was built without (see `pdfFontFaces` in `craftbridge/pdf`); sent with the first open. */
+  fonts?: PdfFontFace[];
 }
 
 /** An open PDF. Every call runs in the worker, so the page never blocks on the engine. */
@@ -433,7 +435,7 @@ export async function openPdf(bytes: Uint8Array, options: OpenOptions = {}): Pro
   const reply = await new Promise<Reply>((resolve, reject) => {
     worker.addEventListener("message", (e: MessageEvent<Reply>) => resolve(e.data), { once: true });
     worker.addEventListener("error", (e) => reject(new EngineError("failed", e.message || "the worker failed")), { once: true });
-    worker.postMessage({ op: "open", id: 0, bytes, password: options.password, wasmUrl: options.wasmUrl } satisfies Call & { id: number });
+    worker.postMessage({ op: "open", id: 0, bytes, password: options.password, wasmUrl: options.wasmUrl, fonts: options.fonts } satisfies Call & { id: number });
   }).catch((e) => {
     worker.terminate();
     throw e;

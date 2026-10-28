@@ -28,14 +28,15 @@ if [ "$want" != "$have" ]; then
 fi
 
 "$here/scripts/prepare-fonts.sh"
-(cd "$src" && CRAFT_FONTS_DIR="$here/vendor/fonts-input" cargo build -p deckcraft-wasm --target wasm32-unknown-unknown --release --locked)
+# The Japanese face is a file the host loads (shared with the PDF module); the engine's own copy would be a second one.
+# Cold crates are built for size, the drawing and text ones for speed (size-first everywhere made rendering several times slower).
+. "$here/scripts/size-profile.sh"
+(cd "$src" && CRAFT_FONTS_EXTERNAL_CJK=1 CRAFT_FONTS_DIR="$here/vendor/fonts-input" CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 cargo build -p deckcraft-wasm --target wasm32-unknown-unknown --release --locked $SIZE_CONFIG)
 out="$here/wasm/deck"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name deckcraft_wasm \
   "${CARGO_TARGET_DIR:-$src/target}/wasm32-unknown-unknown/release/deckcraft_wasm.wasm"
-# Faces a host loads on demand (Korean, Simplified Chinese), too big to carry in the module itself.
-mkdir -p "$out/fonts"
-cp "$here/vendor/fonts-input/fonts/nanum-gothic/NanumGothic-Regular.ttf" "$here/vendor/fonts-input/fonts/omnitext-hans/OmnitextHans-Regular.otf" "$out/fonts/"
+"$here/scripts/copy-fonts.sh"
 if [ -z "${SKIP_WASM_OPT:-}" ] && command -v wasm-opt >/dev/null 2>&1; then
   wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals --enable-simd \
     "$out/deckcraft_wasm_bg.wasm" -o "$out/deckcraft_wasm_bg.wasm"

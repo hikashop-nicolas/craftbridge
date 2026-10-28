@@ -1,5 +1,8 @@
 // Faces for scripts the module does not carry; `session.addFont` takes the bytes once a document needs them.
+const dir = new URL("../../wasm/fonts/", import.meta.url);
+
 export const deckFontUrls = {
-  hangul: new URL("../../wasm/deck/fonts/NanumGothic-Regular.ttf", import.meta.url).href,
-  hans: new URL("../../wasm/deck/fonts/OmnitextHans-Regular.otf", import.meta.url).href,
+  japanese: new URL("BIZUDPGothic-Regular.ttf", dir).href,
+  hangul: new URL("NanumGothic-Regular.ttf", dir).href,
+  hans: new URL("OmnitextHans-Regular.otf", dir).href,
 };

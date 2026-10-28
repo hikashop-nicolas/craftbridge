@@ -29,11 +29,14 @@ fi
 "$here/scripts/prepare-fonts.sh"
 input="$here/vendor/fonts-input"
 
-(cd "$src" && CRAFT_FONTS_DIR="$input" cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked)
+# The Japanese, Chinese and Korean faces are files the host loads (shared with the deck module), not data in the module.
+. "$here/scripts/size-profile.sh"
+(cd "$src" && CRAFT_FONTS_EXTERNAL_CJK=1 CRAFT_FONTS_DIR="$input" CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked $SIZE_CONFIG)
 out="$here/wasm/pdf"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name pdfcraft_wasm \
   "${CARGO_TARGET_DIR:-$src/target}/wasm32-unknown-unknown/release/pdfcraft_wasm.wasm"
+"$here/scripts/copy-fonts.sh"
 if [ -z "${SKIP_WASM_OPT:-}" ] && command -v wasm-opt >/dev/null 2>&1; then
   wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals \
     "$out/pdfcraft_wasm_bg.wasm" -o "$out/pdfcraft_wasm_bg.wasm"
