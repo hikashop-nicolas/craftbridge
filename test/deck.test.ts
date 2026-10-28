@@ -52,6 +52,26 @@ describe.skipIf(!built)("the real deck engine", () => {
     expect(run(e, { op: "overlay" }).canRedo).toBe(true);
   });
 
+  it("answers every call a host makes: show, masters, exports", async () => {
+    const e = await engine();
+    run(e, { op: "execute", command: "file.new", params: {} });
+    run(e, { op: "execute", command: "insert.textBox", params: { rect: [60, 100, 400, 60], text: "Bonjour" } });
+    run(e, { op: "execute", command: "slide.new", params: { layout: "blank", at: 1 } });
+    expect(run(e, { op: "showInfo", index: 0 })).toMatchObject({ steps: expect.any(Number), auto: expect.any(Array) });
+    for (const call of [
+      { op: "renderStep", index: 0, step: 0, t: 0, scale: 0.3 },
+      { op: "renderShow", index: 0, step: 0, t: 0, plays: [], scale: 0.3 },
+      { op: "renderTransition", index: 1, t: 0.5, scale: 0.3 },
+      { op: "renderLayout", master: 0, layout: -1, scale: 0.3 },
+    ] as const) {
+      const r = run(e, call);
+      expect(r.rgba.length).toBe(r.width * r.height * 4);
+    }
+    expect(run(e, { op: "masters" })[0].layouts.length).toBeGreaterThan(1);
+    expect(String.fromCharCode(...(run(e, { op: "exportPdf", params: { format: "pdf" } }) as Uint8Array).slice(0, 4))).toBe("%PDF");
+    expect((run(e, { op: "exportPng", index: 0, scale: 0.5 }) as Uint8Array)[1]).toBe(0x50);
+  });
+
   it("reports a command that is not available as invalid", async () => {
     const e = await engine();
     expect(() => e.handle({ op: "execute", command: "text.insert", params: { text: "x" } })).toThrowError(/not available|no document/);
