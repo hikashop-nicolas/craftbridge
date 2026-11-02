@@ -59,5 +59,7 @@ The engine is PdfCraft's `main` plus our `carry` branch (fixes not yet merged up
 upstream's main into a scratch `carry-next`, builds the wasm and runs the tests of the crates we change; the weekly
 workflow `.github/workflows/upstream-sync.yml` runs it and opens an issue when it conflicts or fails. `--push` publishes
 `carry-next` to the fork; taking it means fast-forwarding `carry`, putting the new hash in `pdfcraft.rev` and running
-`npm test` against a fresh `npm run build:wasm`. Sending our patches upstream keeps the merge small.
+`npm test` against a fresh `npm run build:wasm`. That run includes `test/corpus.test.ts`: real documents (IRS XFA forms, a
+55-page report, a journal article, a Japanese PDF, PDF 2.0) opened, drawn, edited, filled and saved through the engine; see
+`test/corpus/README.md`. Sending our patches upstream keeps the merge small.
 

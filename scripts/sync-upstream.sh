@@ -38,5 +38,5 @@ fi
 echo "builds and passes"
 if [ "${1:-}" = "--push" ]; then
   git -C "$src" push --quiet --force origin carry-next
-  echo "pushed carry-next: $(git -C "$src" rev-parse HEAD) (to take it: fast-forward carry to it, put the hash in pdfcraft.rev, run the wasm tests)"
+  echo "pushed carry-next: $(git -C "$src" rev-parse HEAD) (to take it: fast-forward carry to it, put the hash in pdfcraft.rev, npm run build:wasm, then npm test for the wasm and corpus tests)"
 fi

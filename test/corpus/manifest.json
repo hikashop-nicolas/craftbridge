@@ -1,0 +1,58 @@
+[
+  {
+    "file": "irs-f1040-2025.pdf",
+    "title": "Form 1040, U.S. Individual Income Tax Return (2025)",
+    "source": "https://www.irs.gov/pub/irs-pdf/f1040.pdf",
+    "licence": "Public domain (work of the U.S. federal government, 17 U.S.C. 105)",
+    "sha256": "3d31c226df0d189ced80e039d01cf0f8820c1019681a0f0ca6264de277b7e982",
+    "covers": "XFA form with 199 fields over two tagged pages, object streams, dense text"
+  },
+  {
+    "file": "irs-fw9-2024.pdf",
+    "title": "Form W-9, Request for Taxpayer Identification Number (Rev. March 2024)",
+    "source": "https://www.irs.gov/pub/irs-pdf/fw9.pdf",
+    "licence": "Public domain (work of the U.S. federal government, 17 U.S.C. 105)",
+    "sha256": "2d420cbb4123dcf1fb82595b2359cfbb5d81f00b9df9d359fcc7af361d093f53",
+    "covers": "XFA form, six pages, instructions pages without fields"
+  },
+  {
+    "file": "nist-csf-1-1.pdf",
+    "title": "Framework for Improving Critical Infrastructure Cybersecurity, Version 1.1",
+    "source": "https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.04162018.pdf",
+    "licence": "Public domain (work of the U.S. federal government, 17 U.S.C. 105)",
+    "sha256": "0f3ca796610ab024cbc3484cbd6799e19b4d9159d3634972a2a76af83f15fb92",
+    "covers": "55 pages, tagged, tables, figures, object streams, an AcroForm without fields"
+  },
+  {
+    "file": "plos-one-0000308.pdf",
+    "title": "Piwowar et al., Sharing Detailed Research Data Is Associated with Increased Citation Rate (PLoS ONE, 2007)",
+    "source": "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0000308&type=printable",
+    "licence": "CC-BY (the article states the Creative Commons Attribution License on its first page)",
+    "sha256": "b52ca44dfd09d240543b80315f0cd43fe9ba7946f2b5650d5580213ed5d9186c",
+    "covers": "typeset journal article, two columns, embedded Type 1 and TrueType fonts, figures"
+  },
+  {
+    "file": "digital-agency-terms-ja.pdf",
+    "title": "Commentary on the Government Standard Terms of Use 2.0 (Digital Agency, Japan)",
+    "source": "https://www.digital.go.jp/assets/contents/node/basic_page/field_ref_resources/f7fde41d-ffca-4b2a-9b25-94b8a701a037/a0f187e6/20220706_resources_data_betten_01.pdf",
+    "licence": "Government of Japan Standard Terms of Use 2.0 (compatible with CC BY 4.0)",
+    "sha256": "7aa72a369c0e684bf0f9253485ca27099d5032a64b97d3b954cbb0a31ba834c4",
+    "covers": "Japanese text with embedded CID TrueType fonts, tagged, nine pages"
+  },
+  {
+    "file": "pdf20-utf8-test.pdf",
+    "title": "PDF 2.0 with UTF-8 test file",
+    "source": "https://github.com/pdf-association/pdf20examples/blob/master/pdf20-utf8-test.pdf",
+    "licence": "Apache-2.0",
+    "sha256": "a7ca717ef062df0a65e58487d26358c81424b76084a2000ca1c74b9e5776b7a1",
+    "covers": "PDF 2.0 header and UTF-8 text strings (Latin, CJK and astral characters)"
+  },
+  {
+    "file": "pdfium-xfa-email.pdf",
+    "title": "PDFium XFA test resource email_recommended",
+    "source": "https://github.com/chromium/pdfium/blob/main/testing/resources/xfa/email_recommended.pdf",
+    "licence": "BSD-3-Clause (The PDFium Authors)",
+    "sha256": "053ecab3c230f96f28d53fbc011e03f18b1cb667bc0e12eecb98e26a498534e4",
+    "covers": "dynamic XFA form whose fields come from the template, with scripts"
+  }
+]
