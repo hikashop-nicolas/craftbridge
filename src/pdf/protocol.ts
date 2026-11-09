@@ -314,7 +314,7 @@ export interface Rendered {
   height: number;
   /** Premultiplied RGBA8, row by row. */
   rgba: Uint8Array;
-  /** Why the picture is partial or approximate: "content-truncated", "colour-fallback". */
+  /** Why the picture is partial or approximate: "content-truncated", "colour-fallback", "malformed-indexed-image", "type3-widths-missing". */
   warnings: string[];
 }
 
