@@ -36,6 +36,11 @@ Chinese from fonts built into the wasm, as vector glyphs (no font file ends up i
 
 `npm run build:wasm` assembles these into the engine's font input. Korean and the other scripts have no face yet.
 
+`wasm/fonts/` also serves files that code outside the engines fetches on first use (`deckFontUrls`): the Japanese,
+Korean and Simplified Chinese faces, and Inter (Latin, Greek, Cyrillic), Noto Sans Arabic and Noto Sans Hebrew from
+craft-fonts, unmodified, all SIL OFL 1.1. Each file has its licence beside it (`<name>.OFL.txt`), for hosts to ship
+with it.
+
 ## Use
 
 ```ts
