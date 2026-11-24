@@ -41,6 +41,10 @@ describe.skipIf(!built)("the real engine on real documents", () => {
     ["BIZUDPGothic-Regular.ttf", "BIZ UDPGothic", "Jpan,Latn"],
     ["OmnitextHans-Regular.otf", "Omnitext Hans", "Hans"],
     ["NanumGothic-Regular.ttf", "NanumGothic", "Hang,Kore"],
+    ["NotoSansArabic.ttf", "Noto Sans Arabic", "Arab"],
+    ["NotoSansHebrew-Regular.ttf", "Noto Sans Hebrew", "Hebr"],
+    ["NotoSansThai.ttf", "Noto Sans Thai", "Thai"],
+    ["NotoSansDevanagari-Regular.ttf", "Noto Sans Devanagari", "Deva"],
   ] as const;
   const fontsDir = new URL("../wasm/fonts/", import.meta.url);
   const haveFonts = faces.every(([file]) => fs.existsSync(new URL(file, fontsDir)));
@@ -164,9 +168,9 @@ describe.skipIf(!built)("the real engine on real documents", () => {
 
   it.skipIf(!haveFonts)("draws added text in every script the engine has a face for", async () => {
     const e = await opened("nist-csf-1-1.pdf");
-    const area: Box = [40, 300, 560, 500];
+    const area: Box = [40, 300, 560, 620];
     const empty = ink(render(e, 2), area);
-    const lines = ["Latin text", "Ελληνικά", "Кириллица", "日本語のテスト", "简体中文测试", "한국어 시험"];
+    const lines = ["Latin text", "Ελληνικά", "Кириллица", "日本語のテスト", "简体中文测试", "한국어 시험", "نص عربي", "טקסט עברי", "ข้อความภาษาไทย"];
     lines.forEach((text, i) => {
       e.handle({ op: "addText", page: 2, view: [50, 310 + i * 30, 550, 335 + i * 30], text, style: { size: 18 } });
       expect(ink(render(e, 2), area), text).toBeGreaterThan(empty);
