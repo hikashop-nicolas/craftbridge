@@ -29,9 +29,12 @@ fi
 "$here/scripts/prepare-fonts.sh"
 input="$here/vendor/fonts-input"
 
-# The Japanese, Chinese and Korean faces are files the host loads (shared with the deck module), not data in the module.
+# The Japanese, Chinese, Korean, Arabic, Thai, Devanagari and Hebrew faces are files the host loads (the CJK ones shared with
+# the deck module), not data in the module. pdfcraft-edit is named too so its LSTM line breaking (0.3 MB of data instead of
+# 1.8 MB of dictionaries) can be turned on: cargo takes a dependency's feature only for a package it builds.
 . "$here/scripts/size-profile.sh"
-(cd "$src" && CRAFT_FONTS_EXTERNAL_CJK=1 CRAFT_FONTS_DIR="$input" CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked $SIZE_CONFIG)
+(cd "$src" && CRAFT_FONTS_EXTERNAL_CJK=1 CRAFT_FONTS_EXTERNAL=Arab,Thai,Deva,Hebr CRAFT_FONTS_DIR="$input" CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked \
+  -p pdfcraft-edit --features pdfcraft-edit/lstm-line-break $SIZE_CONFIG)
 out="$here/wasm/pdf"
 rm -rf "$out"
 wasm-bindgen --target web --out-dir "$out" --out-name pdfcraft_wasm \
