@@ -105,7 +105,7 @@ Not started; the cheap wins come first.
 
 ## The slides engine (DeckCraft)
 
-15,414,436 bytes before, 14,196,380 since DeckCraft's carry `f8821b07` (craftbridge `2f6af52`): the engine
+15,414,436 bytes before; 14,196,380 since DeckCraft's carry `f8821b07` (craftbridge `2f6af52`): the engine
 takes a video's poster frame from the host (`poster` on `insert.video` and `media.posterFrame`), and the module is
 built without its `video-posters` feature, which leaves the H.264, HEVC, VP9 and AV1 decoders out. Omnitext draws
 the frame from a `<video>`. Media playback was already the host's.
@@ -115,6 +115,13 @@ serde code generated for the command protocol's types 2.1 MB (one encoder and de
 library itself), two font and shaping stacks 2.5 MB (skrifa/harfrust, and ttf-parser/rustybuzz through krilla),
 image codecs 1.9 MB (PNG, JPEG, GIF, BMP, TIFF, WebP: all formats PowerPoint itself accepts).
 
-Next candidate: pictures decoded by the host as well. The engine draws them every time a slide is drawn, so it would
-need to draw a placeholder, ask the host and draw again; about 2 MB of code before optimisation.
+Then 13,333,678 bytes since DeckCraft's carry `eb0d3b8d`: TIFF and WebP decoding is a `tiff-webp` feature of
+deckcraft-render, left out of the slides module. `media.undecodable` lists the pictures the host should convert and
+`media.setDisplay` takes a PNG or JPEG copy for each, which drawing, sizing, export, background removal and artistic
+effects use while the file keeps the original bytes. Omnitext converts them when a deck opens and after slides are
+reused or pasted; pictures it inserts are already PNG or JPEG.
+
+Decoding every picture in the host instead was looked at and set aside: decoding runs through drawing, every
+pixel-editing command, PDF export (in craft-libs' PDF code) and metafiles, all synchronously, and the encoders
+(compress pictures, image and GIF export) share code with the decoders; perhaps 1 MB more, for a large refactor.
 
