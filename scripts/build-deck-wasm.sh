@@ -29,8 +29,9 @@ fi
 
 "$here/scripts/prepare-fonts.sh"
 # The Japanese face is a file the host loads (shared with the PDF module); the engine's own copy would be a second one.
-# Without default features the engine decodes no video: the host passes poster frames (`poster` on insert.video and
-# media.posterFrame), and the H.264, HEVC, VP9 and AV1 decoders stay out of the module.
+# Without default features the engine decodes no video and no TIFF or WebP: the host passes poster frames (`poster` on
+# insert.video and media.posterFrame) and PNG copies of such pictures (media.undecodable, media.setDisplay), and those
+# decoders stay out of the module.
 # Cold crates are built for size, the drawing and text ones for speed (size-first everywhere made rendering several times slower).
 . "$here/scripts/size-profile.sh"
 (cd "$src" && CRAFT_FONTS_EXTERNAL_CJK=1 CRAFT_FONTS_DIR="$here/vendor/fonts-input" CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 cargo build -p deckcraft-wasm --no-default-features --target wasm32-unknown-unknown --release --locked $SIZE_CONFIG)
