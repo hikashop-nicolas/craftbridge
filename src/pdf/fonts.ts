@@ -6,5 +6,4 @@ export const pdfFontFaces = [
   { url: new URL("../../wasm/fonts/NotoSansArabic.ttf", import.meta.url).href, family: "Noto Sans Arabic", style: "Regular", scripts: "Arab" },
   { url: new URL("../../wasm/fonts/NotoSansHebrew-Regular.ttf", import.meta.url).href, family: "Noto Sans Hebrew", style: "Regular", scripts: "Hebr" },
   { url: new URL("../../wasm/fonts/NotoSansThai.ttf", import.meta.url).href, family: "Noto Sans Thai", style: "Regular", scripts: "Thai" },
-  { url: new URL("../../wasm/fonts/NotoSansDevanagari-Regular.ttf", import.meta.url).href, family: "Noto Sans Devanagari", style: "Regular", scripts: "Deva" },
 ];

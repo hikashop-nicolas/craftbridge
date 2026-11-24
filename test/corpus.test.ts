@@ -44,7 +44,6 @@ describe.skipIf(!built)("the real engine on real documents", () => {
     ["NotoSansArabic.ttf", "Noto Sans Arabic", "Arab"],
     ["NotoSansHebrew-Regular.ttf", "Noto Sans Hebrew", "Hebr"],
     ["NotoSansThai.ttf", "Noto Sans Thai", "Thai"],
-    ["NotoSansDevanagari-Regular.ttf", "Noto Sans Devanagari", "Deva"],
   ] as const;
   const fontsDir = new URL("../wasm/fonts/", import.meta.url);
   const haveFonts = faces.every(([file]) => fs.existsSync(new URL(file, fontsDir)));

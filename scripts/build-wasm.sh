@@ -29,8 +29,9 @@ fi
 "$here/scripts/prepare-fonts.sh"
 input="$here/vendor/fonts-input"
 
-# The Japanese, Chinese, Korean, Arabic, Thai, Devanagari and Hebrew faces are files the host loads (the CJK ones shared with
-# the deck module), not data in the module. pdfcraft-edit is named too so its LSTM line breaking (0.3 MB of data instead of
+# The Japanese, Chinese, Korean, Arabic, Thai and Hebrew faces are files the host loads (the CJK ones shared with
+# the deck module), not data in the module. Devanagari is left out altogether: the engine can't add Devanagari text yet, and
+# its only other use (signature status captions in Hindi) never comes up, as nothing passes Hindi captions. pdfcraft-edit is named too so its LSTM line breaking (0.3 MB of data instead of
 # 1.8 MB of dictionaries) can be turned on: cargo takes a dependency's feature only for a package it builds.
 . "$here/scripts/size-profile.sh"
 (cd "$src" && CRAFT_FONTS_EXTERNAL_CJK=1 CRAFT_FONTS_EXTERNAL=Arab,Thai,Deva,Hebr CRAFT_FONTS_DIR="$input" CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 cargo build -p pdfcraft-wasm --target wasm32-unknown-unknown --release --locked \
