@@ -1,6 +1,6 @@
-# The PDF wasm's size
+# The engines' wasm size
 
-What makes up `wasm/pdf/pdfcraft_wasm_bg.wasm`, what has been trimmed, and what could be.
+What makes up `wasm/pdf/pdfcraft_wasm_bg.wasm` and `wasm/deck/deckcraft_wasm_bg.wasm`, what has been trimmed, and what could be.
 Measured on PdfCraft's carry at `3260713e4` (upstream main of 2026-11-23), built with
 `scripts/build-wasm.sh`.
 
@@ -52,7 +52,7 @@ and draw every page, edit, save, on 7 real PDFs, two runs each) and a busy form 
 |---|---|---|---|---|
 | Leave out the image codecs PdfCraft never accepts (EXR, WebP, JPEG XL, DDS, DICOM, ...) | 25,256,711 | 945,663 bytes | same | craft-libs features, then one PdfCraft line: [storytold/craft-libs#3329](https://github.com/storytold/craft-libs/pull/3329), [#3330](https://github.com/storytold/craft-libs/pull/3330) |
 | Line breaking with ICU's LSTM models (`new_lstm`, 310 KB) instead of its dictionaries | 24,749,043 | 1,451,869 bytes | same | `crates/edit/src/linebreak.rs`, `icu_segmenter` feature `lstm` |
-| Arabic, Devanagari, Thai and Hebrew faces loaded at run time like the CJK ones | | about 1.4 MB | same | PdfCraft `crates/fonts/build.rs` (`CRAFT_FONTS_EXTERNAL`), craftbridge `src/pdf/fonts.ts` and `copy-fonts.sh` |
+| Arabic, Thai and Hebrew faces loaded at run time like the CJK ones (Devanagari left out: nothing in the module can use it) | | about 1.4 MB | same | PdfCraft `crates/fonts/build.rs` (`CRAFT_FONTS_EXTERNAL`), craftbridge `src/pdf/fonts.ts` and `copy-fonts.sh` |
 | `opt-level = "s"` also for the script engine (boa, regress) and the features off the drawing path (redaction, annotations, pages, signing, print, accessibility, XFDF, audit) | | about 1.6 MB | drawing same; busy script 15% slower (0.53 s against 0.45 s) | craftbridge `scripts/size-profile.sh` |
 | The three rows above together | 21,665,128 | **4,535,784 bytes (17.3%)** | drawing and editing same; scripts 15% slower | |
 | `opt-level = "z"` for every crate | 20,036,821 | 6,164,091 bytes | 1.5 to 2.2 times slower (the 55-page NIST report draws in 2.4 s against 1.1 s) | ruled out |
@@ -102,3 +102,19 @@ What it would take:
    Upstream's own web build is close to Cloudflare Pages' 25 MiB file limit, so they may want it.
 
 Not started; the cheap wins come first.
+
+## The slides engine (DeckCraft)
+
+15,414,436 bytes before, 14,196,380 since DeckCraft's carry `f8821b07` (craftbridge `2f6af52`): the engine
+takes a video's poster frame from the host (`poster` on `insert.video` and `media.posterFrame`), and the module is
+built without its `video-posters` feature, which leaves the H.264, HEVC, VP9 and AV1 decoders out. Omnitext draws
+the frame from a `<video>`. Media playback was already the host's.
+
+Code before `wasm-opt`, by crate, 19.1 MB in all: the engine and document model 3.5 MB, generic Rust 3.0 MB, the
+serde code generated for the command protocol's types 2.1 MB (one encoder and decoder per type, not the JSON
+library itself), two font and shaping stacks 2.5 MB (skrifa/harfrust, and ttf-parser/rustybuzz through krilla),
+image codecs 1.9 MB (PNG, JPEG, GIF, BMP, TIFF, WebP: all formats PowerPoint itself accepts).
+
+Next candidate: pictures decoded by the host as well. The engine draws them every time a slide is drawn, so it would
+need to draw a placeholder, ask the host and draw again; about 2 MB of code before optimisation.
+
