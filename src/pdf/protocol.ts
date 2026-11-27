@@ -35,8 +35,12 @@ export interface PageObject {
   text: string | null;
   /** Where it is drawn: points from the page's top-left, y down. */
   view: Box;
-  /** How a text object looks (null for a picture). `align` is null for text the page already had. */
-  style: (Required<Omit<TextStyle, "align">> & { align: TextStyle["align"] | null }) | null;
+  /**
+   * How a text object looks (null for a picture). `align` is null for text the page already had.
+   * `font` is the face it is set in: the registered face of added text (null for a standard family),
+   * the font name of text the page already had.
+   */
+  style: (Required<Pick<TextStyle, "family" | "bold" | "italic" | "size" | "color">> & { align: TextStyle["align"] | null; font: string | null }) | null;
 }
 
 export interface TextStyle {
@@ -48,6 +52,35 @@ export interface TextStyle {
   /** RGB, each 0 to 1. */
   color?: [number, number, number];
   align?: "left" | "center" | "right" | "justify";
+  /** A face given to `registerTextFont`, by the name it returned; "" goes back to `family`. */
+  font?: string;
+  /** Existing text only: one of the page's own fonts, a `resource` from `textFonts`. */
+  resource?: string;
+  /** Existing text only: parts of the new text styled on their own (UTF-16 offsets), one registered face per change. */
+  ranges?: TextRange[];
+}
+
+export interface TextRange {
+  from: number;
+  to: number;
+  font?: string;
+  resource?: string;
+  size?: number;
+  color?: [number, number, number];
+}
+
+/** A font of a page that its text can be set in. */
+export interface TextFont {
+  resource: string;
+  face: string;
+  /** Only offered as a replacement (a face the engine carries), not one of the page's own. */
+  choice: boolean;
+}
+
+/** A registered face: the name styles use and its family. */
+export interface RegisteredFont {
+  font: string;
+  family: string;
 }
 
 export interface ObjectRef {
@@ -353,6 +386,8 @@ export type Call =
   | { op: "addImage"; page: number; name: string; bytes: Uint8Array; view?: Box }
   | { op: "deleteObject"; page: number; target: ObjectRef }
   | { op: "setText"; page: number; target: ObjectRef; text?: string; style?: TextStyle }
+  | { op: "registerTextFont"; bytes: Uint8Array }
+  | { op: "textFonts"; page: number }
   | { op: "cover"; page: number; view: Box }
   | { op: "find"; query: string; caseSensitive?: boolean; wholeWords?: boolean; limit?: number }
   | { op: "selectText"; page: number; from: [number, number]; to: [number, number] }

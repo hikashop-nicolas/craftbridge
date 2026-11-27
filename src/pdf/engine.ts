@@ -1,6 +1,6 @@
 // The request handler, free of Worker and wasm loading so it can be tested with a stand-in module.
 
-import type { AttachmentInfo, BookmarkInfo, HiddenInfo, ScriptEvent, AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, Rendered, SignatureInfo, StampInfo, TextBlock, TextSelection } from "./protocol";
+import type { AttachmentInfo, BookmarkInfo, HiddenInfo, ScriptEvent, AnnotationInfo, Call, DocumentInfo, FieldInfo, FindMatch, FieldActionInfo, History, JsOutput, LayerInfo, LinkInfo, PageObject, RegisteredFont, Rendered, SignatureInfo, StampInfo, TextBlock, TextFont, TextSelection } from "./protocol";
 import type { ErrorCode } from "./protocol";
 
 /** The slice of the wasm-bindgen `Pdf` class the handler uses. */
@@ -24,6 +24,8 @@ export interface WasmPdf {
   add_image(page: number, name: string, bytes: Uint8Array, view?: number[]): void;
   delete_object(page: number, kind: string, index: number): void;
   set_text(page: number, kind: string, index: number, text: string | undefined, style: string): void;
+  register_text_font(bytes: Uint8Array): string;
+  text_fonts(page: number): string;
   cover(page: number, view: number[]): void;
   find(query: string, caseSensitive: boolean, wholeWords: boolean, limit: number): string;
   select_text(page: number, from: number[], to: number[]): string;
@@ -191,6 +193,10 @@ export class Engine {
       case "setText":
         this.need().set_text(call.page, call.target.kind, Math.trunc(call.target.index), call.text, JSON.stringify(call.style ?? {}));
         return { value: null };
+      case "registerTextFont":
+        return { value: JSON.parse(this.need().register_text_font(call.bytes)) as RegisteredFont };
+      case "textFonts":
+        return { value: JSON.parse(this.need().text_fonts(call.page)) as TextFont[] };
       case "cover":
         this.need().cover(call.page, call.view);
         return { value: null };

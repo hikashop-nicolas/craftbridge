@@ -1,8 +1,8 @@
 import { EngineError } from "./engine";
-import type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, PdfFontFace, ProtectSpec, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile } from "./protocol";
+import type { RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, Call, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, PdfFontFace, ProtectSpec, RegisteredFont, Rendered, Reply, SignSpec, SignatureInfo, StampInfo, TextBlock, TextFont, TextRange, TextSelection, TextStyle, Tile } from "./protocol";
 
 export { EngineError };
-export type { PdfFontFace, RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
+export type { PdfFontFace, RegisteredFont, TextFont, TextRange, RunnableAction, AttachmentInfo, BackgroundSpec, BookmarkInfo, HeaderFooterSpec, HiddenInfo, MarkKind, WatermarkSpec, ScriptEvent, ActionTrigger, AnnotationInfo, Box, CommentSpec, DocumentInfo, EditCall, FieldAction, FieldActionInfo, FieldChange, FieldInfo, FieldSpec, FieldValue, FindMatch, History, JsOutput, JsRequest, LayerInfo, LinkInfo, MarkupKind, ObjectRef, PageObject, ProtectSpec, Rendered, SignSpec, SignatureInfo, StampInfo, TextBlock, TextSelection, TextStyle, Tile };
 
 export interface OpenOptions {
   /** The password of an encrypted file. */
@@ -121,6 +121,20 @@ export class PdfDocument {
   /** Rewrites an object's text and/or restyles it; leave `text` out to keep the words. */
   async setText(page: number, target: ObjectRef, text?: string, style: TextStyle = {}): Promise<void> {
     await this.call({ op: "setText", page, target, text, style });
+  }
+
+  /**
+   * Keeps a font file (.ttf or .otf) for text, checked as embedding checks it (a static outline font
+   * whose embedding permissions allow editing). Styles then name it by the returned `font`. Saving
+   * writes only the glyphs used, unless the font forbids subsetting.
+   */
+  registerTextFont(bytes: Uint8Array): Promise<RegisteredFont> {
+    return this.call({ op: "registerTextFont", bytes });
+  }
+
+  /** The page's own fonts its text can be set in (a `resource` for `TextStyle`). */
+  textFonts(page: number): Promise<TextFont[]> {
+    return this.call({ op: "textFonts", page });
   }
 
   /** Paints a white box over `view` (the covered content stays in the file). */

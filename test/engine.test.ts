@@ -86,6 +86,8 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     add_image: (_p, name, bytes) => void calls.push(`add_image ${name} ${bytes.length}`),
     delete_object: (_p, kind, index) => void calls.push(`delete_object ${kind} ${index}`),
     set_text: (_p, kind, index, text, style) => void calls.push(`set_text ${kind} ${index} ${text} ${style}`),
+    register_text_font: (bytes) => (calls.push(`register_font ${bytes.length}`), JSON.stringify({ font: "Face-Regular", family: "Face" })),
+    text_fonts: (page) => JSON.stringify([{ resource: "F1", face: `Face${page}`, choice: false }]),
     cover: (_p, view) => void calls.push(`cover ${view.join(",")}`),
     find: (q, cs, ww, limit) => (calls.push(`find ${q} ${cs} ${ww} ${limit}`), JSON.stringify([{ page: 0, text: q, rects: [[1, 2, 3, 4]] }])),
     select_text: (_p, from, to) => (calls.push(`select ${from} ${to}`), JSON.stringify({ text: "x", rects: [[1, 2, 3, 4]] })),
@@ -202,6 +204,16 @@ describe("Engine", () => {
       "cover 1,1,5,5",
       "pages_from more.pdf 3 2",
     ]);
+  });
+
+  it("registers a face for text and lists a page's fonts", () => {
+    const { module, calls } = fakeModule();
+    const e = new Engine(module);
+    open(e);
+    expect(e.handle({ op: "registerTextFont", bytes: new Uint8Array(4) }).value).toEqual({ font: "Face-Regular", family: "Face" });
+    expect(e.handle({ op: "textFonts", page: 1 }).value).toEqual([{ resource: "F1", face: "Face1", choice: false }]);
+    e.handle({ op: "setText", page: 0, target: { kind: "text", index: 0 }, style: { font: "Face-Regular", ranges: [{ from: 1, to: 3, font: "Face-Regular" }] } });
+    expect(calls).toEqual(["register_font 4", 'set_text text 0 undefined {"font":"Face-Regular","ranges":[{"from":1,"to":3,"font":"Face-Regular"}]}']);
   });
 
   it("passes review calls through", () => {

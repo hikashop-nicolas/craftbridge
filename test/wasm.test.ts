@@ -102,6 +102,31 @@ describe.skipIf(!built)("the real engine", () => {
     expect(() => e.handle({ op: "moveObjects", page: 0, targets: [{ kind: "added", index: 3 }], dx: 1, dy: 1 })).toThrow();
   });
 
+  it("sets added and existing text in registered fonts and saves them as subsets", async () => {
+    const font = (name: string) => new Uint8Array(fs.readFileSync(new URL(`../wasm/fonts/${name}`, import.meta.url)));
+    // the Chinese face has no Latin letters, so "Page 1" stays in its own font there
+    for (const [file, words, latin] of [["BIZUDPGothic-Regular.ttf", "日本語のテキスト", true], ["OmnitextHans-Regular.otf", "中文文字", false], ["NanumGothic-Regular.ttf", "한국어 글자", true]] as const) {
+      const e = await engine();
+      const original = fixture(1);
+      e.handle({ op: "open", bytes: original });
+      const bytes = font(file);
+      const { font: name } = e.handle({ op: "registerTextFont", bytes }).value as { font: string };
+      e.handle({ op: "addText", page: 0, view: [20, 40, 180, 80], text: words, style: { font: name, size: 16 } });
+      if (latin) e.handle({ op: "setText", page: 0, target: { kind: "text", index: 0 }, style: { font: name } });
+      else expect(() => e.handle({ op: "setText", page: 0, target: { kind: "text", index: 0 }, style: { font: name } })).toThrow(/U\+0050/);
+      const objects = e.handle({ op: "objects", page: 0 }).value as { kind: string; text: string; style: { font: string | null } }[];
+      expect(objects.find((o) => o.kind === "added")).toMatchObject({ text: words, style: { font: name } });
+      const saved = e.handle({ op: "save" }).value as Uint8Array;
+      // the file grows by the glyphs used, not the font
+      expect(saved.length - original.length).toBeLessThan(bytes.length / 10);
+      const back = await engine();
+      back.handle({ op: "open", bytes: saved });
+      const again = back.handle({ op: "objects", page: 0 }).value as { kind: string; text: string; style: { font: string | null } }[];
+      expect(again.find((o) => o.kind === "added")).toMatchObject({ text: words, style: { font: name } });
+      if (latin) expect(again.find((o) => o.kind === "text")!.style.font).toBe(name);
+    }
+  });
+
   it("finds text, selects it, marks it up and adds a link", async () => {
     const e = await engine();
     e.handle({ op: "open", bytes: fixture(2) });
