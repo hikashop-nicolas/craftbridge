@@ -125,7 +125,35 @@ export type Call =
   | { op: "masters" }
   | { op: "renderLayout"; master: number; layout: number; scale: number }
   | { op: "save" }
-  | { op: "addFont"; bytes: Uint8Array };
+  | { op: "addFont"; bytes: Uint8Array }
+  | { op: "embedFont"; family: string; faces: EmbedFaces };
+
+/** A font file (TTF, OTF, or a TTC with the face's index). */
+export type EmbedFile = Uint8Array | { bytes: Uint8Array; index: number };
+
+/** The font files of one family to embed in the presentation, by face. */
+export interface EmbedFaces {
+  regular?: EmbedFile;
+  bold?: EmbedFile;
+  italic?: EmbedFile;
+  boldItalic?: EmbedFile;
+}
+
+export type EmbedFace = keyof EmbedFaces;
+
+/** What `embedFont` did: the faces stored, and those the font's license or format refused. */
+export interface EmbedResult {
+  family: string;
+  faces: EmbedFace[];
+  skipped: { face: EmbedFace; reason: "restricted" | "previewPrint" | "bitmapOnly" | "notAFont" | "tooLarge" }[];
+}
+
+/** A font the presentation carries; `drawable` is false for a compressed subset the engine can only keep. */
+export interface EmbeddedFontInfo {
+  family: string;
+  faces: EmbedFace[];
+  drawable: boolean;
+}
 
 /** A master and the names of its layouts. */
 export interface MasterInfo {

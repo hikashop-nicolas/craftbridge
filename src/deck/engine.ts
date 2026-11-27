@@ -1,4 +1,4 @@
-import type { Call, CommandInfo, ErrorCode, Hit, LoadInfo, Overlay, PointerEvent, MasterInfo, Rendered, ShowInfo } from "./protocol";
+import type { Call, CommandInfo, EmbedResult, ErrorCode, Hit, LoadInfo, Overlay, PointerEvent, MasterInfo, Rendered, ShowInfo } from "./protocol";
 
 /** The slice of the generated `Deck` class the engine uses. */
 export interface WasmDeck {
@@ -29,6 +29,13 @@ export interface WasmDeck {
 
 export interface WasmModule {
   create(): WasmDeck;
+}
+
+/** Base64 for the engine's JSON parameters, in chunks so big font files fit the call stack. */
+function base64(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
 }
 
 export class EngineError extends Error {
@@ -153,6 +160,15 @@ export class Engine {
       }
       case "addFont":
         return { value: JSON.parse(this.need().add_font(call.bytes)) as unknown };
+      case "embedFont": {
+        const params: Record<string, string | number> = { family: call.family };
+        for (const [face, file] of Object.entries(call.faces)) {
+          if (!file) continue;
+          params[face] = base64(file instanceof Uint8Array ? file : file.bytes);
+          if (!(file instanceof Uint8Array)) params[`${face}Index`] = file.index;
+        }
+        return { value: JSON.parse(this.need().execute("font.embed", JSON.stringify(params))) as EmbedResult };
+      }
     }
   }
 }

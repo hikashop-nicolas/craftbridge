@@ -1,5 +1,5 @@
 import { EngineError } from "./engine";
-import type { Call, CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, MasterInfo, Reply, ShowInfo, Tool, TriggerPlay } from "./protocol";
+import type { Call, CommandInfo, EmbeddedFontInfo, EmbedFaces, EmbedResult, Hit, LoadInfo, Overlay, PointerEvent, Rendered, MasterInfo, Reply, ShowInfo, Tool, TriggerPlay } from "./protocol";
 
 export { EngineError };
 export type { CommandInfo, Hit, LoadInfo, Overlay, PointerEvent, Rendered, Tool };
@@ -152,6 +152,21 @@ export class DeckSession {
   /** Adds a font file (TTF, OTF, TTC) for rendering. */
   addFont(bytes: Uint8Array): Promise<unknown> {
     return this.call({ op: "addFont", bytes });
+  }
+
+  /** Embeds a family's font files in the presentation (saved with it); restricted faces are skipped. */
+  embedFont(family: string, faces: EmbedFaces): Promise<EmbedResult> {
+    return this.call({ op: "embedFont", family, faces });
+  }
+
+  /** Takes an embedded font out of the presentation. */
+  unembedFont(family: string): Promise<{ removed: boolean }> {
+    return this.execute("font.unembed", { family });
+  }
+
+  /** The fonts the presentation carries. */
+  embeddedFonts(): Promise<EmbeddedFontInfo[]> {
+    return this.execute("font.embedded", {});
   }
 
   close(): void {

@@ -78,6 +78,24 @@ describe.skipIf(!built)("the real deck engine", () => {
     expect((run(e, { op: "exportPng", index: 0, scale: 0.5 }) as Uint8Array)[1]).toBe(0x50);
   });
 
+  it("embeds a font file in the saved presentation", async () => {
+    const e = await engine();
+    run(e, { op: "execute", command: "file.new", params: {} });
+    const inter = new Uint8Array(fs.readFileSync(new URL("../wasm/fonts/Inter-Regular.ttf", import.meta.url)));
+    const r = run(e, { op: "embedFont", family: "Inter", faces: { regular: inter } });
+    expect(r).toEqual({ family: "Inter", faces: ["regular"], skipped: [] });
+    const bytes = run(e, { op: "save" }) as Uint8Array;
+    const again = await engine();
+    run(again, { op: "load", name: "f.pptx", bytes });
+    expect(run(again, { op: "execute", command: "font.embedded", params: {} })).toEqual([{ family: "Inter", faces: ["regular"], drawable: true }]);
+    // A face whose license forbids embedding is refused.
+    const locked = inter.slice();
+    const view = new DataView(locked.buffer);
+    const n = view.getUint16(4);
+    for (let i = 0; i < n; i++) if (String.fromCharCode(...locked.slice(12 + 16 * i, 16 + 16 * i)) === "OS/2") view.setUint16(view.getUint32(20 + 16 * i) + 8, 2);
+    expect(() => e.handle({ op: "embedFont", family: "Locked", faces: { regular: locked } })).toThrowError(/restricted/);
+  });
+
   it("reports a command that is not available as invalid", async () => {
     const e = await engine();
     expect(() => e.handle({ op: "execute", command: "text.insert", params: { text: "x" } })).toThrowError(/not available|no document/);
