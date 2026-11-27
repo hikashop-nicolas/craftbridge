@@ -141,6 +141,10 @@ describe.skipIf(!built)("the real engine", () => {
     e.handle({ op: "setAnnotationFont", page: 0, index: box.index });
     expect((e.handle({ op: "annotations", page: 0 }).value as { index: number; font?: string | null }[]).find((a) => a.index === box.index)!.font).toBeNull();
     e.handle({ op: "setAnnotationFont", page: 0, index: box.index, font });
+    // A long Japanese line in a narrow box wraps in the face and the box grows to its lines.
+    e.handle({ op: "addAnnotation", page: 1, spec: { type: "textbox", box: [20, 40, 100, 60], fontSize: 12, contents: "長い日本語のテキストが狭い枠で折り返されます", font } });
+    const narrow = (e.handle({ op: "annotations", page: 1 }).value as { subtype: string; view: number[] }[]).find((a) => a.subtype === "FreeText")!;
+    expect(narrow.view[3]! - narrow.view[1]!).toBeGreaterThan(12 * 1.2 * 3);
     const saved = e.handle({ op: "save" }).value as Uint8Array;
     expect(saved.length - original.length).toBeLessThan(bytes.length / 10);
     const back = await engine();
