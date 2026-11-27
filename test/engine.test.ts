@@ -25,6 +25,7 @@ function fakeModule(opts: { pages?: number; fail?: string } = {}): { module: Was
     insert_pages_from: (name, bytes, at) => void calls.push(`pages_from ${name} ${bytes.length} ${at}`),
     add_annotation: (page, spec) => void calls.push(`annotation ${page} ${spec}`),
     set_annotation_contents: (page, index, text) => void calls.push(`contents ${page} ${index} ${text}`),
+    set_annotation_font: (page, index, font) => void calls.push(`annotation_font ${page} ${index} ${font ?? "-"}`),
     add_field: (page, view, spec) => void calls.push(`field ${page} ${view.join(",")} ${spec}`),
     delete_field: (name) => void calls.push(`delete_field ${name}`),
     delete_field_widget: (name, widget) => void calls.push(`delete_widget ${name} ${widget}`),
@@ -213,6 +214,9 @@ describe("Engine", () => {
     expect(e.handle({ op: "registerTextFont", bytes: new Uint8Array(4) }).value).toEqual({ font: "Face-Regular", family: "Face" });
     expect(e.handle({ op: "textFonts", page: 1 }).value).toEqual([{ resource: "F1", face: "Face1", choice: false }]);
     e.handle({ op: "setText", page: 0, target: { kind: "text", index: 0 }, style: { font: "Face-Regular", ranges: [{ from: 1, to: 3, font: "Face-Regular" }] } });
+    e.handle({ op: "setAnnotationFont", page: 0, index: 2, font: "Face-Regular" });
+    e.handle({ op: "setAnnotationFont", page: 0, index: 2 });
+    expect(calls.splice(-2)).toEqual(["annotation_font 0 2 Face-Regular", "annotation_font 0 2 -"]);
     expect(calls).toEqual(["register_font 4", 'set_text text 0 undefined {"font":"Face-Regular","ranges":[{"from":1,"to":3,"font":"Face-Regular"}]}']);
   });
 

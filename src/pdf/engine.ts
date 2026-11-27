@@ -39,6 +39,7 @@ export interface WasmPdf {
   set_field(name: string, value: string): void;
   add_annotation(page: number, spec: string): void;
   set_annotation_contents(page: number, index: number, text: string): void;
+  set_annotation_font(page: number, index: number, font?: string): void;
   add_field(page: number, view: number[], spec: string): void;
   delete_field(name: string): void;
   delete_field_widget(name: string, widget: number): void;
@@ -230,6 +231,9 @@ export class Engine {
         return { value: null };
       case "setAnnotationContents":
         this.need().set_annotation_contents(call.page, Math.trunc(call.index), call.text);
+        return { value: null };
+      case "setAnnotationFont":
+        this.need().set_annotation_font(call.page, Math.trunc(call.index), call.font || undefined);
         return { value: null };
       case "stamps":
         return { value: JSON.parse(this.wasm.stamps()) as StampInfo[] };

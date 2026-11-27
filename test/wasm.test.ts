@@ -127,6 +127,28 @@ describe.skipIf(!built)("the real engine", () => {
     }
   });
 
+  it("draws headers, watermarks and text boxes in a registered font", async () => {
+    const e = await engine();
+    const original = fixture(2);
+    e.handle({ op: "open", bytes: original });
+    const bytes = new Uint8Array(fs.readFileSync(new URL("../wasm/fonts/BIZUDPGothic-Regular.ttf", import.meta.url)));
+    const { font } = e.handle({ op: "registerTextFont", bytes }).value as { font: string };
+    e.handle({ op: "addHeaderFooter", spec: { text: ["見出し <<1>>", "", "", "", "", "フッター"], font } });
+    e.handle({ op: "addWatermark", spec: { text: "社外秘", font } });
+    e.handle({ op: "addAnnotation", page: 0, spec: { type: "textbox", box: [20, 40, 180, 80], contents: "テキストボックス", font } });
+    const box = (e.handle({ op: "annotations", page: 0 }).value as { subtype: string; index: number; font?: string | null }[]).find((a) => a.subtype === "FreeText")!;
+    expect(box.font).toBe(font);
+    e.handle({ op: "setAnnotationFont", page: 0, index: box.index });
+    expect((e.handle({ op: "annotations", page: 0 }).value as { index: number; font?: string | null }[]).find((a) => a.index === box.index)!.font).toBeNull();
+    e.handle({ op: "setAnnotationFont", page: 0, index: box.index, font });
+    const saved = e.handle({ op: "save" }).value as Uint8Array;
+    expect(saved.length - original.length).toBeLessThan(bytes.length / 10);
+    const back = await engine();
+    back.handle({ op: "open", bytes: saved });
+    const text = (back.handle({ op: "textBlocks", page: 1 }).value as { text: string }[]).map((b) => b.text).join(" ");
+    for (const words of ["見出し 2", "フッター", "社外秘"]) expect(text).toContain(words);
+  });
+
   it("finds text, selects it, marks it up and adds a link", async () => {
     const e = await engine();
     e.handle({ op: "open", bytes: fixture(2) });

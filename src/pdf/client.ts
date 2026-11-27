@@ -218,6 +218,11 @@ export class PdfDocument {
     await this.call({ op: "setAnnotationContents", page, index, text });
   }
 
+  /** Sets a text box's face (a name `registerTextFont` returned), or back to its own without one. */
+  async setAnnotationFont(page: number, index: number, font?: string): Promise<void> {
+    await this.call({ op: "setAnnotationFont", page, index, font });
+  }
+
   /** The stamps that can be added with `addAnnotation({ type: "stamp", stamp: name })`. */
   stamps(): Promise<StampInfo[]> {
     return this.call({ op: "stamps" });

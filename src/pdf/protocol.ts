@@ -116,6 +116,8 @@ export interface AnnotationInfo {
   subtype: string;
   contents: string | null;
   view: Box;
+  /** A text box's chosen face (a registered font's name), or null in its own. */
+  font?: string | null;
 }
 
 export type FieldKind = "text" | "check" | "radio" | "button" | "choice" | "signature";
@@ -150,8 +152,8 @@ export type CommentSpec = (
   | { type: "line"; from: Point; to: Point }
   | { type: "arrow"; from: Point; to: Point }
   | { type: "ink"; strokes: Point[][] }
-  | { type: "textbox"; box: Box; fontSize?: number }
-  | { type: "typewriter"; box: Box; fontSize?: number }
+  | { type: "textbox"; box: Box; fontSize?: number; font?: string }
+  | { type: "typewriter"; box: Box; fontSize?: number; font?: string }
   | { type: "mark"; box: Box; mark?: "check" | "cross" | "dot" | "line" }
   | { type: "signature"; strokes: Point[][] }
   | { type: "typedSignature"; at: Point; text: string; height?: number }
@@ -264,6 +266,8 @@ export interface WatermarkSpec {
   behind?: boolean;
   /** A picture's size relative to the page. */
   scale?: number;
+  /** A face given to `registerTextFont`; Helvetica when left out. */
+  font?: string;
   /** 0-based pages; every page when left out. */
   pages?: number[];
 }
@@ -271,6 +275,8 @@ export interface WatermarkSpec {
 export interface HeaderFooterSpec {
   /** Left, centre and right of the header, then of the footer. `<<1>>` is the page number and `<<n>>` the page count. */
   text: [string, string, string, string, string, string];
+  /** "helvetica", "times", "courier", or a face given to `registerTextFont`. */
+  font?: string;
   size?: number;
   color?: [number, number, number];
   /** Top, bottom, left, right in points. */
@@ -401,6 +407,7 @@ export type Call =
   | { op: "setField"; name: string; value: FieldValue }
   | { op: "addAnnotation"; page: number; spec: CommentSpec }
   | { op: "setAnnotationContents"; page: number; index: number; text: string }
+  | { op: "setAnnotationFont"; page: number; index: number; font?: string }
   | { op: "stamps" }
   | { op: "addField"; page: number; view: Box; spec: FieldSpec }
   | { op: "deleteField"; name: string }
@@ -473,6 +480,7 @@ export type EditCall = Extract<
   | { op: "setField" }
   | { op: "addAnnotation" }
   | { op: "setAnnotationContents" }
+  | { op: "setAnnotationFont" }
   | { op: "addField" }
   | { op: "deleteField" }
   | { op: "deleteFieldWidget" }
